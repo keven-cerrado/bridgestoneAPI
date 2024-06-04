@@ -3,13 +3,15 @@ from decimal import Decimal
 from typing import List
 from sqlalchemy.orm import Session
 from . import models, schemas
+from ..clientes import schemas as clientes_schemas
+from ..clientes import models as clientes_models
 from collections import defaultdict
 from datetime import datetime, date
 
 def get_faturamento(db: Session, skip: int = 0, limit: int = 100):
     try:
         faturamentos = db.query(models.ItemFaturamento).filter(models.ItemFaturamento.DOC_FAT.isnot(None)).order_by(models.ItemFaturamento.DATA_CRIADA.desc()).offset(skip).limit(limit).all()
-        return aggregate_by_numero_nota(faturamentos)
+        return aggregate_by_numero_nota(db ,faturamentos)
     except Exception as e:
         print(e)
         return None
@@ -21,12 +23,19 @@ def get_faturamento_per_date(db: Session, data_inicial: str, data_final: str):
     
     try:
         faturamentos = db.query(models.ItemFaturamento).filter(models.ItemFaturamento.DATA_CRIADA.between(data_inicial, data_final)).all()
-        return aggregate_by_numero_nota(faturamentos)
+        return aggregate_by_numero_nota(db, faturamentos)
     except Exception as e:
         print(e)
         return None
+    
+def set_idCliente(v, values: clientes_schemas.Cliente):
+    ddd = values.TELEFONE1[:2]  # Primeiros 2 dígitos do telefone
+    last_4_phone = values.TELEFONE1[-4:]  # Últimos 4 dígitos do telefone
+    first_5_cpf_cnpj = values.CPF_CNPJ[:5]  # Primeiros 5 dígitos do CPF/CNPJ
+    last_2_cpf_cnpj = values.CPF_CNPJ[-2:]  # Últimos 2 dígitos do CPF/CNPJ
+    return ddd + last_4_phone + first_5_cpf_cnpj + last_2_cpf_cnpj
 
-def aggregate_by_numero_nota(faturamentos):
+def aggregate_by_numero_nota(db: Session, faturamentos):
     grouped = defaultdict(list)
     
     # Listas de família e grupos permitidos
@@ -47,8 +56,12 @@ def aggregate_by_numero_nota(faturamentos):
     for numero_nota, items in grouped.items():
         items: List[schemas.ItemFaturamento]
         total_faturamento = items[0].TOTALNF
-        cliente_id = items[0].CLIENTE_ID
-        cliente_nome = items[0].CLIENTE_NOME
+        cliente = db.query(clientes_models.Cliente).filter(clientes_models.Cliente.ID == items[0].CLIENTE_ID).first()
+        clienteSchema = clientes_schemas.Cliente.model_validate(cliente)
+        clienteSchema.IDCLIENTE = set_idCliente(clienteSchema.IDCLIENTE, clienteSchema)
+        # print(clienteSchema.IDCLIENTE)
+        # cliente_id = items[0].CLIENTE_ID
+        # cliente_nome = items[0].CLIENTE_NOME
         data_criacao = items[0].DATA_CRIADA
 
         itens_modificados: List[schemas.ItemFaturamento] = [] 
@@ -97,8 +110,7 @@ def aggregate_by_numero_nota(faturamentos):
         documento = schemas.Faturamento(
             numero_nota=str(numero_nota) if str(numero_nota) else "",
             data_criacao=data_criacao,
-            cliente_id=cliente_id,
-            cliente_nome=cliente_nome,
+            idCliente=clienteSchema.IDCLIENTE if clienteSchema.IDCLIENTE else "",
             total_faturamento=total_faturamento,
             itens=itens_modificados
         )

@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from typing import Any, List
-from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 class ItemFaturamento(BaseModel):
     # sync_updated_at: datetime
@@ -123,7 +123,6 @@ class ItemFaturamento(BaseModel):
 class Faturamento(BaseModel):
     numero_nota: str
     data_criacao: date
-    cliente_id: str
-    cliente_nome: str
+    idCliente: str
     total_faturamento: float
     itens: List[ItemFaturamento]
