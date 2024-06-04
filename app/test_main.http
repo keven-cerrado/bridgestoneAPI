@@ -1,0 +1,11 @@
+### Teste para obter faturamento com paginação
+GET http://localhost:8000/faturamento/?skip=0&limit=10
+Accept: application/json
+
+###
+
+### Teste para obter faturamento por data
+GET http://localhost:8000/faturamento/?start=02/06/2024&end=03/06/2024
+Accept: application/json
+
+###
