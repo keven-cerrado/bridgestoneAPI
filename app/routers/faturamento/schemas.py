@@ -2,7 +2,8 @@ from datetime import date, datetime
 from typing import Any, List
 from pydantic import BaseModel, ConfigDict, model_validator
 
-class ItemFaturamento(BaseModel):
+
+class ItemFaturamentoInDB(BaseModel):
     # sync_updated_at: datetime
     # sync_created_at: datetime
     ID: str
@@ -95,8 +96,8 @@ class ItemFaturamento(BaseModel):
     PORCENTAGEM_COMISSAO_VENDEDOR: float
     PORCENTAGEM_COMISSAO_COLETADOR: float
     VALOR_BASE_COMISSAO: float
-    
-    @model_validator(mode= 'before')
+
+    @model_validator(mode="before")
     def set_defaults(cls, values: Any) -> Any:
         for field in cls.__annotations__.keys():
             if getattr(values, field) is None:
@@ -106,23 +107,60 @@ class ItemFaturamento(BaseModel):
                 elif field_type == float:
                     setattr(values, field, 0.0)
                 elif field_type == str:
-                    setattr(values, field, '')
+                    setattr(values, field, "")
                 elif field_type == datetime:
                     setattr(values, field, datetime.now())
         return values
-    
+
     # fazer validacao dos dados dos clientes
     # @field_validator('', mode='after')
-    
 
     model_config = ConfigDict(
         from_attributes=True,
     )
     
-    
+
 class Faturamento(BaseModel):
     numero_nota: str
     data_criacao: date
     idCliente: str
     total_faturamento: float
-    itens: List[ItemFaturamento]
+    itens: List[ItemFaturamentoInDB]
+
+
+
+
+class Pagos(BaseModel):
+    importe: float
+    cotizacion: float
+    codigoMoneda: str
+    codigoTipoPago: int
+    documentoCliente: None
+
+
+class Detalles(BaseModel):
+    importe: float
+    recargo: float
+    cantidad: float
+    descuento: float
+    codigoBarras: str
+    codigoArticulo: str
+    importeUnitario: float
+    descripcionArticulo: str
+
+
+class ModelScannTech(BaseModel):
+    fecha: datetime
+    pagos: List[Pagos]
+    total: int
+    numero: str
+    detalles: List[Detalles]
+    idCliente: str
+    cotizacion: float
+    cancelacion: bool
+    codigoMoneda: str
+    recargoTotal: float
+    descuentoTotal: float
+    codigoCanalVenta: int
+    documentoCliente: str
+    descripcionCanalVenta: str
