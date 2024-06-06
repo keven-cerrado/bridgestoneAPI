@@ -118,7 +118,7 @@ class ItemFaturamentoInDB(BaseModel):
     model_config = ConfigDict(
         from_attributes=True,
     )
-    
+
 
 class Faturamento(BaseModel):
     numero_nota: str
@@ -128,12 +128,10 @@ class Faturamento(BaseModel):
     itens: List[ItemFaturamentoInDB]
 
 
-
-
 class Pagos(BaseModel):
     importe: float
-    cotizacion: float
-    codigoMoneda: str
+    cotizacion: float = 1.0
+    codigoMoneda: str = "986"
     codigoTipoPago: int
     documentoCliente: None
 
@@ -152,15 +150,15 @@ class Detalles(BaseModel):
 class ModelScannTech(BaseModel):
     fecha: datetime
     pagos: List[Pagos]
-    total: int
+    total: float
     numero: str
     detalles: List[Detalles]
     idCliente: str
-    cotizacion: float
+    cotizacion: float = 1.0
     cancelacion: bool
-    codigoMoneda: str
+    codigoMoneda: str = "986"
     recargoTotal: float
     descuentoTotal: float
     codigoCanalVenta: int
-    documentoCliente: str
+    documentoCliente: None
     descripcionCanalVenta: str
