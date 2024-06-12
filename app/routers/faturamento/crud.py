@@ -7,9 +7,14 @@ from ..clientes import schemas as clientes_schemas
 from ..clientes import models as clientes_models
 from collections import defaultdict
 from datetime import datetime, date
+from app.constants import (
+    agrupar_outros_flag,
+)
 
 
-def get_faturamento(db: Session, skip: int = 0, limit: int = 100):
+def get_faturamento(
+    db: Session, skip: int = 0, limit: int = 100, agrupar_outros: bool = True
+):
     try:
         faturamentos = (
             db.query(models.ItemFaturamento)
@@ -22,14 +27,16 @@ def get_faturamento(db: Session, skip: int = 0, limit: int = 100):
             .limit(limit)
             .all()
         )
-        return aggregate_by_numero_nota(db, faturamentos)
+        return aggregate_by_numero_nota(db, faturamentos, agrupar_outros=agrupar_outros)
     except Exception as e:
         print(e)
         return None
 
 
 # Filtro por range de datas
-def get_faturamento_per_date(db: Session, data_inicial: str, data_final: str):
+def get_faturamento_per_date(
+    db: Session, data_inicial: str, data_final: str, agrupar_outros: bool = True
+):
     data_inicial = datetime.strptime(data_inicial, "%d/%m/%Y").date()
     data_final = datetime.strptime(data_final, "%d/%m/%Y").date()
 
@@ -37,11 +44,56 @@ def get_faturamento_per_date(db: Session, data_inicial: str, data_final: str):
         faturamentos = (
             db.query(models.ItemFaturamento)
             .filter(
-                models.ItemFaturamento.DATA_CRIADA.between(data_inicial, data_final)
+                models.ItemFaturamento.DOC_FAT.isnot(None)
+                & models.ItemFaturamento.NUMERO_NOTA.isnot(None)
+                & models.ItemFaturamento.DATA_CRIADA.between(data_inicial, data_final)
             )
+            .order_by(models.ItemFaturamento.DATA_CRIADA.desc())
             .all()
         )
-        return aggregate_by_numero_nota(db, faturamentos)
+        return aggregate_by_numero_nota(db, faturamentos, agrupar_outros=agrupar_outros)
+    except Exception as e:
+        print(e)
+        return None
+
+
+def get_fechamento_per_date(
+    db: Session, data_inicial: str, data_final: str, agrupar_outros: bool = True
+):
+    current_date = datetime.now().strftime("%d/%m/%Y")
+
+    try:
+        # Get the faturamentos for the specified date range
+        faturamentos: List[schemas.ModelScannTech] = get_faturamento_per_date(
+            db,
+            (data_inicial if data_inicial else current_date),
+            (data_final if data_final else current_date),
+            agrupar_outros=agrupar_outros_flag,
+        )
+
+        if not faturamentos:
+            return schemas.Fechamento(
+            fechaVentas=datetime.now().date(),
+            montoVentaLiquida=0.0,
+            montoCancelaciones=0.0,
+            cantidadMovimientos=0,
+            cantidadCancelaciones=0,
+        )
+
+        fechamento_data = faturamentos[0].fecha
+        total_vendas = sum([f.total for f in faturamentos])
+        qtd_vendas = len(faturamentos)
+        qtd_cancelamentos = len([f for f in faturamentos if f.cancelacion])
+
+        fechamento: schemas.Fechamento = schemas.Fechamento(
+            fechaVentas=fechamento_data,
+            montoVentaLiquida=total_vendas,
+            montoCancelaciones=0.0,
+            cantidadMovimientos=qtd_vendas,
+            cantidadCancelaciones=qtd_cancelamentos,
+        )
+
+        return fechamento
     except Exception as e:
         print(e)
         return None
@@ -61,7 +113,7 @@ def set_idCliente(v, values: clientes_schemas.Cliente):
     return ddd + last_4_phone + first_5_cpf_cnpj + last_2_cpf_cnpj
 
 
-def aggregate_by_numero_nota(db: Session, faturamentos):
+def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = True):
     grouped = defaultdict(list)
 
     # Listas de família e grupos permitidos
@@ -98,7 +150,7 @@ def aggregate_by_numero_nota(db: Session, faturamentos):
         )
         clienteSchema = clientes_schemas.Cliente.model_validate(cliente)
         clienteSchema.IDCLIENTE = set_idCliente(clienteSchema.IDCLIENTE, clienteSchema)
-        data_criacao = items[0].DATA_CRIADA
+        data_criacao = f"{items[0].DATA_CRIADA.strftime('%Y-%m-%dT%H:%M:%S')}.000-0300"
         desconto_total = sum(abs(item.DESCONTO_ABSOLUTO) or 0 for item in items)
         cancelada = items[0].CANCELADA
         forma_pagamento = items[0].FORMA_PAGAMENTO
@@ -119,14 +171,19 @@ def aggregate_by_numero_nota(db: Session, faturamentos):
                     recargo=0.0,
                 )
                 if item.GRUPO not in grupos_permitidos:
-                    if item_agregado is None:
-                        item_agregado = deepcopy(itemDetalhes)
-                        item_agregado.descripcionArticulo = "Outros"
-                        item_agregado.cantidad = 1
+                    if agrupar_outros:
+                        if item_agregado is None:
+                            item_agregado = deepcopy(itemDetalhes)
+                            item_agregado.descripcionArticulo = "Outros"
+                            item_agregado.cantidad = 1
+                        else:
+                            item_agregado.importeUnitario += (
+                                itemDetalhes.importeUnitario
+                            )
+                            item_agregado.importe += itemDetalhes.importe
+                            item_agregado.descuento += itemDetalhes.descuento
                     else:
-                        item_agregado.importeUnitario += itemDetalhes.importeUnitario
-                        item_agregado.importe += itemDetalhes.importe
-                        item_agregado.descuento += itemDetalhes.descuento
+                        itens_modificados.append(itemDetalhes)
                 else:
                     itens_modificados.append(itemDetalhes)
             except Exception as e:
@@ -134,14 +191,6 @@ def aggregate_by_numero_nota(db: Session, faturamentos):
 
         if item_agregado is not None:
             itens_modificados.append(item_agregado)
-
-        # documento = schemas.Faturamento(
-        #     numero_nota=str(numero_nota) if str(numero_nota) else "",
-        #     data_criacao=data_criacao,
-        #     idCliente=clienteSchema.IDCLIENTE if clienteSchema.IDCLIENTE else "",
-        #     total_faturamento=total_faturamento,
-        #     itens=itens_modificados,
-        # )
 
         condicoes_pagamento = {
             "K": 10,
@@ -168,7 +217,7 @@ def aggregate_by_numero_nota(db: Session, faturamentos):
             descuentoTotal=abs(desconto_total),
             recargoTotal=0,
             cancelacion=False if cancelada == "" else True,
-            idCliente=clienteSchema.IDCLIENTE if clienteSchema.IDCLIENTE else "",
+            idCliente=clienteSchema.IDCLIENTE,
             documentoCliente=None,
             codigoCanalVenta=1,
             descripcionCanalVenta="VENDA NA LOJA",

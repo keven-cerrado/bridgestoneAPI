@@ -1,9 +1,7 @@
-import os
+import threading
 from fastapi import FastAPI, Depends
-
+from app.routers.faturamento.scriptSend import iniciar_agendamento
 from .routers.login import login
-
-from .internal import admin
 from .routers.faturamento import faturamento
 from .database import SessionLocal
 
@@ -21,10 +19,14 @@ def get_db():
 
 # app.include_router(login.router)
 app.include_router(faturamento.router)
-app.include_router(
-    admin.router,
-    prefix="/admin",
-    tags=["admin"],
-    # dependencies=[Depends(get_token_header)],
-    responses={418: {"description": ""}},
+
+
+# Função para ser chamada no evento de startup
+def iniciar_agendamento_thread():
+    iniciar_agendamento()
+
+
+# Adicionar o evento de startup
+app.add_event_handler(
+    "startup", lambda: threading.Thread(target=iniciar_agendamento_thread).start()
 )

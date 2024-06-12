@@ -24,12 +24,12 @@ class ItemFaturamentoInDB(BaseModel):
     CENTRO: str
     CLIENTE_ID: str
     CLIENTE_NOME: str
-    CLASSIFICACAO: str
-    SEGMENTO: str
-    FAMILIA: str
-    GRUPO: str
+    CLASSIFICACAO: str = ""
+    SEGMENTO: str = ""
+    FAMILIA: str = ""
+    GRUPO: str = ""
     CODIGO_MATERIAL: str
-    COD_FAB: str
+    COD_FAB: str = ""
     DESC_MATERIAL: str
     CONDICAO_PAG: str
     COND_DESCRICAO: str
@@ -112,9 +112,6 @@ class ItemFaturamentoInDB(BaseModel):
                     setattr(values, field, datetime.now())
         return values
 
-    # fazer validacao dos dados dos clientes
-    # @field_validator('', mode='after')
-
     model_config = ConfigDict(
         from_attributes=True,
     )
@@ -148,10 +145,10 @@ class Detalles(BaseModel):
 
 
 class ModelScannTech(BaseModel):
-    fecha: datetime
+    fecha: str
     pagos: List[Pagos]
     total: float
-    numero: str
+    numero: str = ""
     detalles: List[Detalles]
     idCliente: str
     cotizacion: float = 1.0
@@ -162,3 +159,17 @@ class ModelScannTech(BaseModel):
     codigoCanalVenta: int
     documentoCliente: None
     descripcionCanalVenta: str
+
+
+class Fechamento(BaseModel):
+    fechaVentas: date
+    montoVentaLiquida: float
+    montoCancelaciones: float = 0.0
+    cantidadMovimientos: int
+    cantidadCancelaciones: int = 0
+    
+    
+class Solicitacoes(BaseModel):
+    fecha: date
+    codigoCaja: int
+    tipo: str
