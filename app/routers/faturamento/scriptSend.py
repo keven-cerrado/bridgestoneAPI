@@ -3,22 +3,29 @@ import os
 import schedule
 import time
 from telegram import Bot
-from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
+from ...configuracoes import (
+    hora_envio_faturamento,
+    hora_verificacao_reenvio,
+    hora_verificacao_cancelamentos,
+)
 
 from app.database import SessionLocal
+from app.routers.faturamento.faturamento import get_db
 from app.routers.faturamento.utils import (
     enviar_faturamento_para_api_externa,
     get_solicitacoes_reenvio,
+    verificar_cancelamentos_enviar,
 )
 
 
 bot = Bot(token=os.getenv("BOT_TOKEN_TELEGRAM"))
 
 
-def tarefa_periodica():
+def tarefa_periodica_envio_faturamento():
     db = SessionLocal()
     try:
         enviar_faturamento_para_api_externa(db)
+        verificar_cancelamentos_enviar(db)
     finally:
         db.close()
 
@@ -44,12 +51,16 @@ def start_verificacao_reenvio():
 
 def iniciar_agendamento():
     print("Iniciando agendamento...")
-    # Agendar a tarefa para ser executada a cada dia às 22:00
-    # schedule.every().day.at("22:00").do(tarefa_periodica)
-    # schedule.every(2).seconds.do(tarefa_periodica)
-    # schedule.every().day.at("22:00").do(start_verificacao_reenvio)
-    start_verificacao_reenvio()
-    # schedule.every(2).seconds.do(start)
+    schedule.every().day.at(hora_envio_faturamento).do(
+        tarefa_periodica_envio_faturamento
+    )
+    schedule.every().day.at(hora_verificacao_reenvio).do(start_verificacao_reenvio)
+    schedule.every().day.at(hora_verificacao_cancelamentos).do(
+        verificar_cancelamentos_enviar
+    )
+    # tarefa_periodica_envio_faturamento()
+    # start_verificacao_reenvio()
+    # verificar_cancelamentos_enviar()
 
     while True:
         schedule.run_pending()

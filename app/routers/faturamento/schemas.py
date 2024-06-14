@@ -167,9 +167,19 @@ class Fechamento(BaseModel):
     montoCancelaciones: float = 0.0
     cantidadMovimientos: int
     cantidadCancelaciones: int = 0
-    
-    
+
+
 class Solicitacoes(BaseModel):
     fecha: date
     codigoCaja: int
     tipo: str
+
+
+class Envios(BaseModel):
+    id: int
+    enviado: bool
+    conteudo: str
+    id_lote: str
+    data_envio: date
+    lista_notas: str
+    devolucao_cancelamento: bool

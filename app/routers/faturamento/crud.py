@@ -7,7 +7,7 @@ from ..clientes import schemas as clientes_schemas
 from ..clientes import models as clientes_models
 from collections import defaultdict
 from datetime import datetime, date
-from app.constants import (
+from app.configuracoes import (
     agrupar_outros_flag,
 )
 
@@ -35,8 +35,12 @@ def get_faturamento(
 
 # Filtro por range de datas
 def get_faturamento_per_date(
-    db: Session, data_inicial: str, data_final: str, agrupar_outros: bool = True
-):
+    db: Session,
+    data_inicial: str,
+    data_final: str,
+    agrupar_outros: bool = True,
+    filtrar_canceladas: bool = True,
+) -> List[schemas.ModelScannTech]:
     data_inicial = datetime.strptime(data_inicial, "%d/%m/%Y").date()
     data_final = datetime.strptime(data_final, "%d/%m/%Y").date()
 
@@ -46,6 +50,11 @@ def get_faturamento_per_date(
             .filter(
                 models.ItemFaturamento.DOC_FAT.isnot(None)
                 & models.ItemFaturamento.NUMERO_NOTA.isnot(None)
+                & (
+                    models.ItemFaturamento.CANCELADA.is_(None)
+                    if filtrar_canceladas
+                    else True
+                )
                 & models.ItemFaturamento.DATA_CRIADA.between(data_inicial, data_final)
             )
             .order_by(models.ItemFaturamento.DATA_CRIADA.desc())
@@ -73,12 +82,12 @@ def get_fechamento_per_date(
 
         if not faturamentos:
             return schemas.Fechamento(
-            fechaVentas=datetime.now().date(),
-            montoVentaLiquida=0.0,
-            montoCancelaciones=0.0,
-            cantidadMovimientos=0,
-            cantidadCancelaciones=0,
-        )
+                fechaVentas=datetime.now().date(),
+                montoVentaLiquida=0.0,
+                montoCancelaciones=0.0,
+                cantidadMovimientos=0,
+                cantidadCancelaciones=0,
+            )
 
         fechamento_data = faturamentos[0].fecha
         total_vendas = sum([f.total for f in faturamentos])
@@ -152,7 +161,7 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
         clienteSchema.IDCLIENTE = set_idCliente(clienteSchema.IDCLIENTE, clienteSchema)
         data_criacao = f"{items[0].DATA_CRIADA.strftime('%Y-%m-%dT%H:%M:%S')}.000-0300"
         desconto_total = sum(abs(item.DESCONTO_ABSOLUTO) or 0 for item in items)
-        cancelada = items[0].CANCELADA
+        cancelada = True if items[0].CANCELADA else False
         forma_pagamento = items[0].FORMA_PAGAMENTO
         cond_descricao = items[0].COND_DESCRICAO
 
@@ -216,7 +225,7 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
             numero=numero_nota,
             descuentoTotal=abs(desconto_total),
             recargoTotal=0,
-            cancelacion=False if cancelada == "" else True,
+            cancelacion=cancelada,
             idCliente=clienteSchema.IDCLIENTE,
             documentoCliente=None,
             codigoCanalVenta=1,

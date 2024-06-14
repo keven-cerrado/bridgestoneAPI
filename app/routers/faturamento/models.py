@@ -1,9 +1,10 @@
 from sqlalchemy import Column, Date, Integer, String, DateTime, Float, Boolean
 from ...database import Base
 
+
 class ItemFaturamento(Base):
     __tablename__ = "hanasync_faturamento_notas"
-    
+
     # sync_updated_at = Column(DateTime)
     # sync_created_at = Column(DateTime)
     ID = Column(String, primary_key=True, index=True)
@@ -24,12 +25,12 @@ class ItemFaturamento(Base):
     CENTRO = Column(String)
     CLIENTE_ID = Column(String)
     CLIENTE_NOME = Column(String)
-    CLASSIFICACAO = Column(String, default="") 
-    SEGMENTO = Column(String, default="") 
-    FAMILIA = Column(String, default="") 
-    GRUPO = Column(String, default="") 
+    CLASSIFICACAO = Column(String, default="")
+    SEGMENTO = Column(String, default="")
+    FAMILIA = Column(String, default="")
+    GRUPO = Column(String, default="")
     CODIGO_MATERIAL = Column(String)
-    COD_FAB = Column(String, default="") 
+    COD_FAB = Column(String, default="")
     DESC_MATERIAL = Column(String)
     CONDICAO_PAG = Column(String)
     COND_DESCRICAO = Column(String)
@@ -96,3 +97,15 @@ class ItemFaturamento(Base):
     PORCENTAGEM_COMISSAO_VENDEDOR = Column(Float)
     PORCENTAGEM_COMISSAO_COLETADOR = Column(Float)
     VALOR_BASE_COMISSAO = Column(Float)
+
+
+class Envios(Base):
+    __tablename__ = "scanntech_envios"
+
+    id = Column(Integer, primary_key=True, index=True)
+    enviado = Column(Boolean, default=False)
+    conteudo = Column(String)
+    id_lote = Column(String)
+    data_envio = Column(Date)
+    lista_notas = Column(String)
+    devolucao_cancelamento = Column(Boolean, default=False)
