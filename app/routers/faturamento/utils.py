@@ -237,8 +237,8 @@ def verificar_cancelamentos_enviar(
             )
             notas_devolvidas.extend(notas_devolucao)
 
-        notas = list(filter(None, notas))
-        notas = list(filter(lambda nota: nota not in notas_devolvidas, notas))
+        notas = filter(None, notas)
+        notas = filter(lambda nota: nota not in notas_devolvidas, notas)
         notas_devolvidas = list(filter(None, notas_devolvidas))
 
         notas_enviadas = get_faturamento_per_date(
@@ -353,7 +353,7 @@ def verificar_devolucoes(
     lista_notas = []
 
     for dev in devolucoes:
-        devolucao.montoVentaLiquida += dev.TOTAL
+        devolucao.montoVentaLiquida += dev.TOTAL * -1
         devolucao.montoCancelaciones += dev.TOTAL
         devolucao.cantidadMovimientos += 1
         devolucao.cantidadCancelaciones += 1

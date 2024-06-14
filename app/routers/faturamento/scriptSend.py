@@ -7,6 +7,7 @@ from ...configuracoes import (
     hora_envio_faturamento,
     hora_verificacao_reenvio,
     hora_verificacao_cancelamentos,
+    hora_verificacao_devolucoes,
 )
 
 from app.database import SessionLocal
@@ -15,6 +16,7 @@ from app.routers.faturamento.utils import (
     enviar_faturamento_para_api_externa,
     get_solicitacoes_reenvio,
     verificar_cancelamentos_enviar,
+    verificar_devolucoes,
 )
 
 
@@ -58,6 +60,7 @@ def iniciar_agendamento():
     schedule.every().day.at(hora_verificacao_cancelamentos).do(
         verificar_cancelamentos_enviar
     )
+    schedule.every().day.at(hora_verificacao_devolucoes).do(verificar_devolucoes)
     # tarefa_periodica_envio_faturamento()
     # start_verificacao_reenvio()
     # verificar_cancelamentos_enviar()

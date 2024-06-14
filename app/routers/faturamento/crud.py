@@ -203,20 +203,20 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
 
         condicoes_pagamento = {
             "K": 10,
-            "B": 13,
-            "D": 13,
-            "E": 9,
+            "B": 9,
+            "D": 9,
+            "E": 13 if "CIELO DEBITO" in cond_descricao else 9,
             "G": 11,
             "L": 9,
             "A": 0,
-            "R": 13,
+            "R": 9,
             "V": 0,
-            "H": 12 if "TICKET" in cond_descricao else 13,
-            "F": 13,
+            "H": 12 if "TICKET" in cond_descricao else 9,
+            "F": 9,
             "N": 11,
             "U": 9,
             "C": 11,
-            "O": 13,
+            "O": 9,
         }
 
         responseScannTech = schemas.ModelScannTech(
