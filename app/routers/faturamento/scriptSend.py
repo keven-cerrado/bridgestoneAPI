@@ -6,7 +6,7 @@ from telegram import Bot
 from ...configuracoes import (
     hora_envio_faturamento,
     hora_verificacao_reenvio,
-    hora_verificacao_cancelamentos,
+    # hora_verificacao_cancelamentos,
     hora_verificacao_devolucoes,
 )
 
@@ -32,6 +32,14 @@ def tarefa_periodica_envio_faturamento():
         db.close()
 
 
+def tarefa_periodica_verificacao_devolucoes():
+    db = SessionLocal()
+    try:
+        verificar_devolucoes(db)
+    finally:
+        db.close()
+
+
 async def send_message(message):
     await bot.send_message(chat_id=-4209916479, text=message)
 
@@ -53,17 +61,24 @@ def start_verificacao_reenvio():
 
 def iniciar_agendamento():
     print("Iniciando agendamento...")
-    schedule.every().day.at(hora_envio_faturamento).do(
-        tarefa_periodica_envio_faturamento
+    print(
+        f"Horário de envio de faturamento e verificação de cancelamentos: {hora_envio_faturamento}"
     )
-    schedule.every().day.at(hora_verificacao_reenvio).do(start_verificacao_reenvio)
-    schedule.every().day.at(hora_verificacao_cancelamentos).do(
-        verificar_cancelamentos_enviar
-    )
-    schedule.every().day.at(hora_verificacao_devolucoes).do(verificar_devolucoes)
-    # tarefa_periodica_envio_faturamento()
-    # start_verificacao_reenvio()
-    # verificar_cancelamentos_enviar()
+    print(f"Horário de verificação de reenvio: {hora_verificacao_reenvio}")
+    print(f"Horário de verificação de devoluções: {hora_verificacao_devolucoes}")
+    # schedule.every().day.at(hora_envio_faturamento).do(
+    #     tarefa_periodica_envio_faturamento
+    # )
+    # schedule.every().day.at(hora_verificacao_reenvio).do(start_verificacao_reenvio)
+    # # schedule.every().day.at(hora_verificacao_cancelamentos).do(
+    # #     verificar_cancelamentos_enviar
+    # # )
+    # schedule.every().day.at(hora_verificacao_devolucoes).do(tarefa_periodica_verificacao_devolucoes)
+    tarefa_periodica_envio_faturamento()
+    time.sleep(30)
+    start_verificacao_reenvio()
+    time.sleep(30)
+    tarefa_periodica_verificacao_devolucoes()
 
     while True:
         schedule.run_pending()

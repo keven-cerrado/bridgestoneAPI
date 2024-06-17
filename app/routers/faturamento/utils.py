@@ -138,7 +138,7 @@ def enviar_fechamento_diario(
         resposta = requests.post(url_api_externa, data=fechamento, headers=headers)
         resposta.raise_for_status()
         logger.info(
-            "Fechamento enviado com sucesso. Status code:", resposta.status_code
+            "Fechamento enviado com sucesso. Status code: %s", resposta.status_code
         )
         logger.info(resposta.text)
         logger.info(fechamento)
@@ -149,7 +149,7 @@ def enviar_fechamento_diario(
         logger.error(
             "Falha ao enviar fechamento. Status code:", err.response.status_code
         )
-        logger.error(f"Detalhes do erro:", err.response.text)
+        logger.error("Detalhes do erro: %s", err.response.text)
         logger.error(fechamento)
         print("Falha ao enviar fechamento. Status code:", err.response.status_code)
         print("Detalhes do erro:", err.response.text)
@@ -283,7 +283,9 @@ def verificar_cancelamentos_enviar(
         return
 
     # enviar fechamento de cancelamentos para a API externa
-    url_api_externa = f"{url_base}/v2/minoristas/{idEmpresa}/locales/{idLocal}/cajas/{idCaja}/cierresDiarios"
+    url_api_externa = (
+        f"{url_base}/v2/minoristas/{idEmpresa}/locales/1/cajas/1/cierresDiarios"
+    )
     try:
         devolucao_json = json.loads(devolucao.model_dump_json())
         devolucao_json = json.dumps(devolucao_json)
@@ -295,7 +297,7 @@ def verificar_cancelamentos_enviar(
         envio.lista_notas = numeros_notas_canceladas
         db.commit()
         logger.info(
-            "Fechamento de cancelamentos enviado com sucesso. Status code:",
+            "Fechamento de cancelamentos enviado com sucesso. Status code: %s",
             resposta.status_code,
         )
         logger.info(resposta.text)
@@ -308,10 +310,10 @@ def verificar_cancelamentos_enviar(
         print(devolucao)
     except requests.exceptions.HTTPError as err:
         logger.error(
-            "Falha ao enviar fechamento de cancelamentos. Status code:",
+            "Falha ao enviar fechamento de cancelamentos. Status code: %s",
             err.response.status_code,
         )
-        logger.error("Detalhes do erro:", err.response.text)
+        logger.error("Detalhes do erro: %s", err.response.text)
         logger.error(devolucao)
         print(
             "Falha ao enviar fechamento de cancelamentos. Status code:",
@@ -320,7 +322,7 @@ def verificar_cancelamentos_enviar(
         print("Detalhes do erro:", err.response.text)
         print(devolucao)
     except requests.exceptions.RequestException as err:
-        logger.error("Erro de conexão ao enviar fechamento de cancelamentos:", err)
+        logger.error("Erro de conexão ao enviar fechamento de cancelamentos: %s", err)
         logger.error(devolucao)
         print("Erro de conexão ao enviar fechamento de cancelamentos:", err)
         print(devolucao)
@@ -328,9 +330,12 @@ def verificar_cancelamentos_enviar(
 
 def verificar_devolucoes(
     db: Session,
-    data_inicial: str,
-    data_final: str,
 ):
+
+    data_atual = datetime.now().date()
+    data_inicial = data_atual - timedelta(days=1) if data_atual.day == 1 else data_atual
+    data_final = datetime.now().date()
+
     devolucoes = (
         db.query(ItemFaturamento)
         .filter(
@@ -343,7 +348,7 @@ def verificar_devolucoes(
     )
 
     devolucao = Fechamento(
-        fechaVentas=datetime.now(),
+        fechaVentas=data_atual,
         montoVentaLiquida=0.0,
         montoCancelaciones=0.0,
         cantidadMovimientos=0,
@@ -373,7 +378,9 @@ def verificar_devolucoes(
         db.rollback()
         return
 
-    url_api_externa = f"{url_base}/v2/minoristas/{idEmpresa}/locales/{idLocal}/cajas/{idCaja}/cierresDiarios"
+    url_api_externa = (
+        f"{url_base}/v2/minoristas/{idEmpresa}/locales/1/cajas/1/cierresDiarios"
+    )
 
     try:
         devolucao_json = json.loads(devolucao.model_dump_json())
@@ -386,32 +393,32 @@ def verificar_devolucoes(
         envio.lista_notas = lista_notas
         db.commit()
         logger.info(
-            "Fechamento de devoluções enviado com sucesso. Status code:",
+            "Fechamento de devoluções enviado com sucesso. Status code: %s",
             resposta.status_code,
         )
         logger.info(resposta.text)
         logger.info(devolucao)
         print(
-            "Fechamento de devoluções enviado com sucesso. Status code:",
+            "Fechamento de devoluções enviado com sucesso. Status code: %s",
             resposta.status_code,
         )
         print(resposta.text)
         print(devolucao)
     except requests.exceptions.HTTPError as err:
         logger.error(
-            "Falha ao enviar fechamento de devoluções. Status code:",
+            "Falha ao enviar fechamento de devoluções. Status code: %s",
             err.response.status_code,
         )
-        logger.error("Detalhes do erro:", err.response.text)
+        logger.error("Detalhes do erro: %s", err.response.text)
         logger.error(devolucao)
         print(
-            "Falha ao enviar fechamento de devoluções. Status code:",
+            "Falha ao enviar fechamento de devoluções. Status code: %s",
             err.response.status_code,
         )
         print("Detalhes do erro:", err.response.text)
         print(devolucao)
     except requests.exceptions.RequestException as err:
-        logger.error("Erro de conexão ao enviar fechamento de devoluções:", err)
+        logger.error("Erro de conexão ao enviar fechamento de devoluções: %s", err)
         logger.error(devolucao)
         print("Erro de conexão ao enviar fechamento de devoluções:", err)
         print(devolucao)

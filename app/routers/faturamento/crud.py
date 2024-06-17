@@ -19,8 +19,13 @@ def get_faturamento(
         faturamentos = (
             db.query(models.ItemFaturamento)
             .filter(
-                models.ItemFaturamento.DOC_FAT.isnot(None)
-                & models.ItemFaturamento.NUMERO_NOTA.isnot(None)
+                models.ItemFaturamento.NUMERO_NOTA.isnot(None)
+                & models.ItemFaturamento.RESULTADO_FATURAMENTO.isnot(None)
+                & models.ItemFaturamento.COMISSAO_TIPO.like("VENDA")
+                & (
+                    models.ItemFaturamento.CFOP.like("5117AA")
+                    | models.ItemFaturamento.CFOP.like("6117AA")
+                )
             )
             .order_by(models.ItemFaturamento.DATA_CRIADA.desc())
             .offset(skip)
@@ -48,8 +53,13 @@ def get_faturamento_per_date(
         faturamentos = (
             db.query(models.ItemFaturamento)
             .filter(
-                models.ItemFaturamento.DOC_FAT.isnot(None)
-                & models.ItemFaturamento.NUMERO_NOTA.isnot(None)
+                models.ItemFaturamento.NUMERO_NOTA.isnot(None)
+                & models.ItemFaturamento.RESULTADO_FATURAMENTO.isnot(None)
+                & models.ItemFaturamento.COMISSAO_TIPO.like("VENDA")
+                & (
+                    models.ItemFaturamento.CFOP.like("5117AA")
+                    | models.ItemFaturamento.CFOP.like("6117AA")
+                )
                 & (
                     models.ItemFaturamento.CANCELADA.is_(None)
                     if filtrar_canceladas

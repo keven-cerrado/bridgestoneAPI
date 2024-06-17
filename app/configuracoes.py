@@ -13,9 +13,9 @@ idEmpresa = 74984
 idLocal = 0
 idCaja = 0
 hora_envio_faturamento = "21:00"
-hora_verificacao_reenvio = "21:10"
-hora_verificacao_cancelamentos = "21:20"
-hora_verificacao_devolucoes = "21:30"
+hora_verificacao_reenvio = "21:05"
+# hora_verificacao_cancelamentos = "21:20"
+hora_verificacao_devolucoes = "21:10"
 
 
 def converte_base64(usuario, senha):
