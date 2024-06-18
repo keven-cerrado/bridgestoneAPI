@@ -75,9 +75,9 @@ def iniciar_agendamento():
     # # )
     # schedule.every().day.at(hora_verificacao_devolucoes).do(tarefa_periodica_verificacao_devolucoes)
     tarefa_periodica_envio_faturamento()
-    time.sleep(30)
+    time.sleep(60)
     start_verificacao_reenvio()
-    time.sleep(30)
+    time.sleep(60)
     tarefa_periodica_verificacao_devolucoes()
 
     while True:

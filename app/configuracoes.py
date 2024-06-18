@@ -10,8 +10,8 @@ agrupar_outros_flag = True
 
 url_base = "https://test-parceiro.scanntech.com/api-minoristas/api"
 idEmpresa = 74984
-idLocal = 0
-idCaja = 0
+idLocal = 1
+idCaja = 1
 hora_envio_faturamento = "21:00"
 hora_verificacao_reenvio = "21:05"
 # hora_verificacao_cancelamentos = "21:20"

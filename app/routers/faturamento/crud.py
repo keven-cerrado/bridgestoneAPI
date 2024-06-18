@@ -57,8 +57,8 @@ def get_faturamento_per_date(
                 & models.ItemFaturamento.RESULTADO_FATURAMENTO.isnot(None)
                 & models.ItemFaturamento.COMISSAO_TIPO.like("VENDA")
                 & (
-                    models.ItemFaturamento.CFOP.like("5117AA")
-                    | models.ItemFaturamento.CFOP.like("6117AA")
+                    models.ItemFaturamento.CFOP.not_like("5117AA")
+                    | models.ItemFaturamento.CFOP.not_like("6117AA")
                 )
                 & (
                     models.ItemFaturamento.CANCELADA.is_(None)

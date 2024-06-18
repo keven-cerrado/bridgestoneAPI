@@ -283,9 +283,7 @@ def verificar_cancelamentos_enviar(
         return
 
     # enviar fechamento de cancelamentos para a API externa
-    url_api_externa = (
-        f"{url_base}/v2/minoristas/{idEmpresa}/locales/1/cajas/1/cierresDiarios"
-    )
+    url_api_externa = f"{url_base}/v2/minoristas/{idEmpresa}/locales/{idLocal}/cajas/{idCaja}/cierresDiarios"
     try:
         devolucao_json = json.loads(devolucao.model_dump_json())
         devolucao_json = json.dumps(devolucao_json)
@@ -378,9 +376,7 @@ def verificar_devolucoes(
         db.rollback()
         return
 
-    url_api_externa = (
-        f"{url_base}/v2/minoristas/{idEmpresa}/locales/1/cajas/1/cierresDiarios"
-    )
+    url_api_externa = f"{url_base}/v2/minoristas/{idEmpresa}/locales/{idLocal}/cajas/{idCaja}/cierresDiarios"
 
     try:
         devolucao_json = json.loads(devolucao.model_dump_json())
