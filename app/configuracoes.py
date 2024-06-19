@@ -14,8 +14,8 @@ idLocal = 1
 idCaja = 1
 hora_envio_faturamento = "21:00"
 hora_verificacao_reenvio = "21:05"
-# hora_verificacao_cancelamentos = "21:20"
-hora_verificacao_devolucoes = "21:10"
+hora_verificacao_cancelamentos = "21:10"
+hora_verificacao_devolucoes = "21:15"
 
 
 def converte_base64(usuario, senha):

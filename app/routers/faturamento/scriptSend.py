@@ -6,7 +6,7 @@ from telegram import Bot
 from ...configuracoes import (
     hora_envio_faturamento,
     hora_verificacao_reenvio,
-    # hora_verificacao_cancelamentos,
+    hora_verificacao_cancelamentos,
     hora_verificacao_devolucoes,
 )
 
@@ -27,6 +27,13 @@ def tarefa_periodica_envio_faturamento():
     db = SessionLocal()
     try:
         enviar_faturamento_para_api_externa(db)
+    finally:
+        db.close()
+
+
+def tarefa_periodica_verificacao_cancelamentos():
+    db = SessionLocal()
+    try:
         verificar_cancelamentos_enviar(db)
     finally:
         db.close()
@@ -66,15 +73,19 @@ def iniciar_agendamento():
     )
     print(f"Horário de verificação de reenvio: {hora_verificacao_reenvio}")
     print(f"Horário de verificação de devoluções: {hora_verificacao_devolucoes}")
-    # schedule.every().day.at(hora_envio_faturamento).do(
-    #     tarefa_periodica_envio_faturamento
-    # )
-    # schedule.every().day.at(hora_verificacao_reenvio).do(start_verificacao_reenvio)
-    # # schedule.every().day.at(hora_verificacao_cancelamentos).do(
-    # #     verificar_cancelamentos_enviar
-    # # )
-    # schedule.every().day.at(hora_verificacao_devolucoes).do(tarefa_periodica_verificacao_devolucoes)
+    schedule.every().day.at(hora_envio_faturamento).do(
+        tarefa_periodica_envio_faturamento
+    )
+    schedule.every().day.at(hora_verificacao_reenvio).do(start_verificacao_reenvio)
+    schedule.every().day.at(hora_verificacao_cancelamentos).do(
+        tarefa_periodica_verificacao_cancelamentos
+    )
+    schedule.every().day.at(hora_verificacao_devolucoes).do(
+        tarefa_periodica_verificacao_devolucoes
+    )
     tarefa_periodica_envio_faturamento()
+    time.sleep(60)
+    tarefa_periodica_verificacao_cancelamentos()
     time.sleep(60)
     start_verificacao_reenvio()
     time.sleep(60)
