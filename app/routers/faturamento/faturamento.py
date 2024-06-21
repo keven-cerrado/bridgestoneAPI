@@ -11,6 +11,7 @@ from ...database import SessionLocal
 import logging
 import sys
 from logging.handlers import TimedRotatingFileHandler
+from ...configuracoes import agrupar_outros_flag
 
 router = APIRouter()
 
@@ -22,9 +23,6 @@ def get_db():
         yield db
     finally:
         db.close()
-
-
-agrupar_outros_flag = os.getenv("BRIDGESTONE")
 
 
 # Verifica se o logger já foi configurado
@@ -79,7 +77,9 @@ async def enviar_faturamento(
 ):
     logger.debug("Executing envio de faturamento para API externa")
     try:
-        crud.enviar_faturamento_para_api_externa(db, start, end)
+        utils.enviar_faturamento_para_api_externa(
+            db, start, end, agrupar_outros_flag=agrupar_outros_flag
+        )
     except Exception as e:
         logger.error(f"Error sending faturamento: {e}")
         raise HTTPException(status_code=500, detail="Error sending faturamento")

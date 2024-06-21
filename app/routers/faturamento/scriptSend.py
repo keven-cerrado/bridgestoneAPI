@@ -73,23 +73,23 @@ def iniciar_agendamento():
     )
     print(f"Horário de verificação de reenvio: {hora_verificacao_reenvio}")
     print(f"Horário de verificação de devoluções: {hora_verificacao_devolucoes}")
-    schedule.every().day.at(hora_envio_faturamento).do(
-        tarefa_periodica_envio_faturamento
-    )
-    schedule.every().day.at(hora_verificacao_reenvio).do(start_verificacao_reenvio)
-    schedule.every().day.at(hora_verificacao_cancelamentos).do(
-        tarefa_periodica_verificacao_cancelamentos
-    )
-    schedule.every().day.at(hora_verificacao_devolucoes).do(
-        tarefa_periodica_verificacao_devolucoes
-    )
-    tarefa_periodica_envio_faturamento()
-    time.sleep(60)
-    tarefa_periodica_verificacao_cancelamentos()
-    time.sleep(60)
-    start_verificacao_reenvio()
-    time.sleep(60)
-    tarefa_periodica_verificacao_devolucoes()
+    # schedule.every().day.at(hora_envio_faturamento).do(
+    #     tarefa_periodica_envio_faturamento
+    # )
+    # schedule.every().day.at(hora_verificacao_reenvio).do(start_verificacao_reenvio)
+    # schedule.every().day.at(hora_verificacao_cancelamentos).do(
+    #     tarefa_periodica_verificacao_cancelamentos
+    # )
+    # schedule.every().day.at(hora_verificacao_devolucoes).do(
+    #     tarefa_periodica_verificacao_devolucoes
+    # )
+    # tarefa_periodica_envio_faturamento()
+    # time.sleep(60)
+    # tarefa_periodica_verificacao_cancelamentos()
+    # time.sleep(60)
+    # start_verificacao_reenvio()
+    # time.sleep(60)
+    # tarefa_periodica_verificacao_devolucoes()
 
     while True:
         schedule.run_pending()

@@ -22,10 +22,14 @@ def get_faturamento(
                 models.ItemFaturamento.NUMERO_NOTA.isnot(None)
                 & models.ItemFaturamento.RESULTADO_FATURAMENTO.isnot(None)
                 & models.ItemFaturamento.COMISSAO_TIPO.like("VENDA")
+                & models.ItemFaturamento.TIPO_ORDEM.not_like("ZVSR")
                 & (
-                    models.ItemFaturamento.CFOP.like("5117AA")
-                    | models.ItemFaturamento.CFOP.like("6117AA")
+                    models.ItemFaturamento.CFOP.not_like("5117AA")
+                    | models.ItemFaturamento.CFOP.not_like("6117AA")
                 )
+                & models.ItemFaturamento.CENTRO.not_like("02%")
+                & models.ItemFaturamento.CENTRO.not_like("03%")
+                & models.ItemFaturamento.CENTRO.not_like("0105")
             )
             .order_by(models.ItemFaturamento.DATA_CRIADA.desc())
             .offset(skip)
@@ -56,10 +60,14 @@ def get_faturamento_per_date(
                 models.ItemFaturamento.NUMERO_NOTA.isnot(None)
                 & models.ItemFaturamento.RESULTADO_FATURAMENTO.isnot(None)
                 & models.ItemFaturamento.COMISSAO_TIPO.like("VENDA")
+                & models.ItemFaturamento.TIPO_ORDEM.not_like("ZVSR")
                 & (
                     models.ItemFaturamento.CFOP.not_like("5117AA")
                     | models.ItemFaturamento.CFOP.not_like("6117AA")
                 )
+                & models.ItemFaturamento.CENTRO.not_like("02%")
+                & models.ItemFaturamento.CENTRO.not_like("03%")
+                & models.ItemFaturamento.CENTRO.not_like("0105")
                 & (
                     models.ItemFaturamento.CANCELADA.is_(None)
                     if filtrar_canceladas
@@ -185,20 +193,24 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
                     descripcionArticulo=item.DESC_MATERIAL,
                     cantidad=item.QUANTIDADE,
                     importeUnitario=item.VLR_UNITARIO,
-                    importe=item.TOTAL,
+                    importe=item.TOTAL_BRUTO + (item.ICMS_ST or 0),
                     descuento=abs(item.DESCONTO_ABSOLUTO),
                     recargo=0.0,
                 )
+                if item.GRUPO_MERC == "4153":
+                    itemDetalhes.importe += itemDetalhes.importe * 1.3 / 100
                 if item.GRUPO not in grupos_permitidos:
                     if agrupar_outros:
                         if item_agregado is None:
                             item_agregado = deepcopy(itemDetalhes)
                             item_agregado.descripcionArticulo = "Outros"
+                            item_agregado.codigoArticulo = "0"
+                            item_agregado.codigoBarras = "0"
                             item_agregado.cantidad = 1
                         else:
-                            item_agregado.importeUnitario += (
-                                itemDetalhes.importeUnitario
-                            )
+                            # item_agregado.importeUnitario += (
+                            #     itemDetalhes.importeUnitario
+                            # )
                             item_agregado.importe += itemDetalhes.importe
                             item_agregado.descuento += itemDetalhes.descuento
                     else:
@@ -209,6 +221,8 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
                 print(e)
 
         if item_agregado is not None:
+            item_agregado.importeUnitario = round(item_agregado.importeUnitario, 2)
+            item_agregado.importe = round(item_agregado.importe, 2)
             itens_modificados.append(item_agregado)
 
         condicoes_pagamento = {
