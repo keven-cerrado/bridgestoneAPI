@@ -8,6 +8,7 @@ from ...configuracoes import (
     hora_verificacao_reenvio,
     hora_verificacao_cancelamentos,
     hora_verificacao_devolucoes,
+    filiais,
 )
 
 from app.database import SessionLocal
@@ -23,26 +24,29 @@ from app.routers.faturamento.utils import (
 bot = Bot(token=os.getenv("BOT_TOKEN_TELEGRAM"))
 
 
-def tarefa_periodica_envio_faturamento():
+def tarefa_periodica_envio_faturamento(filial: str = None):
     db = SessionLocal()
     try:
-        enviar_faturamento_para_api_externa(db)
+        for filial in filiais:
+            enviar_faturamento_para_api_externa(db, filial=filial)
     finally:
         db.close()
 
 
-def tarefa_periodica_verificacao_cancelamentos():
+def tarefa_periodica_verificacao_cancelamentos(filial: str = None):
     db = SessionLocal()
     try:
-        verificar_cancelamentos_enviar(db)
+        for filial in filiais:
+            verificar_cancelamentos_enviar(db, filial=filial)
     finally:
         db.close()
 
 
-def tarefa_periodica_verificacao_devolucoes():
+def tarefa_periodica_verificacao_devolucoes(filial: str = None):
     db = SessionLocal()
     try:
-        verificar_devolucoes(db)
+        for filial in filiais:
+            verificar_devolucoes(db, filial=filial)
     finally:
         db.close()
 
@@ -51,13 +55,14 @@ async def send_message(message):
     await bot.send_message(chat_id=-4209916479, text=message)
 
 
-async def verificar_reenvio():
-    solicitacoes = get_solicitacoes_reenvio()
-    if solicitacoes:
-        qtd_solicitacoes = len(solicitacoes)
-        await send_message(
-            f"Existem {qtd_solicitacoes} solicitações de reenvio pendentes."
-        )
+async def verificar_reenvio(filial: str = None):
+    for filial in filiais:
+        solicitacoes = get_solicitacoes_reenvio(filial=filial)
+        if solicitacoes:
+            qtd_solicitacoes = len(solicitacoes)
+            await send_message(
+                f"Existem {qtd_solicitacoes} solicitações de reenvio pendentes. Centro: {filial}"
+            )
 
 
 def start_verificacao_reenvio():
@@ -73,16 +78,28 @@ def iniciar_agendamento():
     )
     print(f"Horário de verificação de reenvio: {hora_verificacao_reenvio}")
     print(f"Horário de verificação de devoluções: {hora_verificacao_devolucoes}")
+
     # schedule.every().day.at(hora_envio_faturamento).do(
     #     tarefa_periodica_envio_faturamento
     # )
-    # schedule.every().day.at(hora_verificacao_reenvio).do(start_verificacao_reenvio)
+    # schedule.every().day.at(hora_verificacao_reenvio).do(
+    #     start_verificacao_reenvio
+    # )
     # schedule.every().day.at(hora_verificacao_cancelamentos).do(
     #     tarefa_periodica_verificacao_cancelamentos
     # )
     # schedule.every().day.at(hora_verificacao_devolucoes).do(
     #     tarefa_periodica_verificacao_devolucoes
     # )
+
+    tarefa_periodica_envio_faturamento()
+    time.sleep(30)
+    tarefa_periodica_verificacao_cancelamentos()
+    time.sleep(30)
+    start_verificacao_reenvio()
+    time.sleep(30)
+    tarefa_periodica_verificacao_devolucoes()
+    time.sleep(30)
     # tarefa_periodica_envio_faturamento()
     # time.sleep(60)
     # tarefa_periodica_verificacao_cancelamentos()

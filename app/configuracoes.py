@@ -16,6 +16,7 @@ hora_envio_faturamento = "21:00"
 hora_verificacao_reenvio = "21:05"
 hora_verificacao_cancelamentos = "21:10"
 hora_verificacao_devolucoes = "21:15"
+filiais = ["0102", "0103", "0104", "0106", "0107"]
 
 
 def converte_base64(usuario, senha):

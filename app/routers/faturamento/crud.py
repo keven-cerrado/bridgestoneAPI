@@ -13,7 +13,11 @@ from app.configuracoes import (
 
 
 def get_faturamento(
-    db: Session, skip: int = 0, limit: int = 100, agrupar_outros: bool = True
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+    agrupar_outros: bool = True,
+    filial: str = None,
 ):
     try:
         faturamentos = (
@@ -30,6 +34,7 @@ def get_faturamento(
                 & models.ItemFaturamento.CENTRO.not_like("02%")
                 & models.ItemFaturamento.CENTRO.not_like("03%")
                 & models.ItemFaturamento.CENTRO.not_like("0105")
+                & (models.ItemFaturamento.CENTRO.like(filial) if filial else True)
             )
             .order_by(models.ItemFaturamento.DATA_CRIADA.desc())
             .offset(skip)
@@ -49,6 +54,7 @@ def get_faturamento_per_date(
     data_final: str,
     agrupar_outros: bool = True,
     filtrar_canceladas: bool = True,
+    filial: str = None,
 ) -> List[schemas.ModelScannTech]:
     data_inicial = datetime.strptime(data_inicial, "%d/%m/%Y").date()
     data_final = datetime.strptime(data_final, "%d/%m/%Y").date()
@@ -68,6 +74,7 @@ def get_faturamento_per_date(
                 & models.ItemFaturamento.CENTRO.not_like("02%")
                 & models.ItemFaturamento.CENTRO.not_like("03%")
                 & models.ItemFaturamento.CENTRO.not_like("0105")
+                & (models.ItemFaturamento.CENTRO.like(filial) if filial else True)
                 & (
                     models.ItemFaturamento.CANCELADA.is_(None)
                     if filtrar_canceladas
@@ -85,7 +92,11 @@ def get_faturamento_per_date(
 
 
 def get_fechamento_per_date(
-    db: Session, data_inicial: str, data_final: str, agrupar_outros: bool = True
+    db: Session,
+    data_inicial: str,
+    data_final: str,
+    agrupar_outros: bool = True,
+    filial: str = None,
 ):
     current_date = datetime.now().strftime("%d/%m/%Y")
 
@@ -96,6 +107,7 @@ def get_fechamento_per_date(
             (data_inicial if data_inicial else current_date),
             (data_final if data_final else current_date),
             agrupar_outros=agrupar_outros_flag,
+            filial=filial,
         )
 
         if not faturamentos:

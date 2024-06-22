@@ -56,11 +56,12 @@ async def read_faturamento_per_date(
     # current_user: Annotated[User, Depends(get_current_user)],
     start: str,
     end: str,
+    centro: str = None,
     db: Session = Depends(get_db),
 ):
     logger.debug(f"Executing read_faturamento_per_date with start={start}, end={end}")
     faturamento = crud.get_faturamento_per_date(
-        db, start, end, agrupar_outros=agrupar_outros_flag
+        db, start, end, agrupar_outros=agrupar_outros_flag, filial=centro
     )
     if faturamento is None:
         logger.error(f"Faturamento not found for date range {start} to {end}")
@@ -74,11 +75,12 @@ async def enviar_faturamento(
     db: Session = Depends(get_db),
     start: str = datetime.now().strftime("%d/%m/%Y"),
     end: str = datetime.now().strftime("%d/%m/%Y"),
+    centro: str = None,
 ):
     logger.debug("Executing envio de faturamento para API externa")
     try:
         utils.enviar_faturamento_para_api_externa(
-            db, start, end, agrupar_outros_flag=agrupar_outros_flag
+            db, start, end, agrupar_outros_flag=agrupar_outros_flag, filial=centro
         )
     except Exception as e:
         logger.error(f"Error sending faturamento: {e}")
@@ -91,9 +93,10 @@ async def read_fechamento(
     db: Session = Depends(get_db),
     start: str = datetime.now().strftime("%d/%m/%Y"),
     end: str = datetime.now().strftime("%d/%m/%Y"),
+    centro: str = None,
 ):
     fechamento = crud.get_fechamento_per_date(
-        db, start, end, agrupar_outros=agrupar_outros_flag
+        db, start, end, agrupar_outros=agrupar_outros_flag, filial=centro
     )
     if not fechamento:
         logger.error("Fechamento not found")
@@ -107,10 +110,11 @@ async def enviar_fechamento(
     db: Session = Depends(get_db),
     start: str = datetime.now().strftime("%d/%m/%Y"),
     end: str = datetime.now().strftime("%d/%m/%Y"),
+    centro: str = None,
 ):
     logger.debug("Executing envio de fechamento para API externa")
     try:
-        faturamento = utils.enviar_fechamento_diario(db, start, end)
+        faturamento = utils.enviar_fechamento_diario(db, start, end, filial=centro)
         logger.info(f"Fechamento enviado com sucesso: {faturamento}")
     except Exception as e:
         logger.error(f"Error sending fechamento: {e}")
@@ -118,9 +122,26 @@ async def enviar_fechamento(
     return {"message": "Fechamento enviado com sucesso"}
 
 
+@router.get("/cancelamentos/enviar/")
+async def enviar_cancelamentos(
+    db: Session = Depends(get_db),
+    centro: str = None,
+):
+    logger.debug("Executing envio de cancelamentos para API externa")
+    try:
+        cancelamentos = utils.verificar_cancelamentos_enviar(db, filial=centro)
+        logger.info(f"Cancelamentos enviados com sucesso: {cancelamentos}")
+    except Exception as e:
+        logger.error(f"Error sending cancelamentos: {e}")
+        raise HTTPException(status_code=500, detail="Error sending cancelamentos")
+    return {"message": "Cancelamentos enviados com sucesso"}
+
+
 @router.get("/solicitacoes", response_model=List[schemas.Solicitacoes])
-async def read_solicitacoes():
-    solicitacoes = utils.get_solicitacoes_reenvio()
+async def read_solicitacoes(
+    centro: str = None,
+):
+    solicitacoes = utils.get_solicitacoes_reenvio(filial=centro)
     if not solicitacoes:
         logger.error("Solicitacoes not found")
         raise HTTPException(status_code=404, detail="Solicitacoes not found")

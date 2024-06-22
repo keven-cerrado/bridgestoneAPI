@@ -31,6 +31,7 @@ def enviar_faturamento_para_api_externa(
     data_inicial: str = None,
     data_final: str = None,
     agrupar_outros_flag: bool = agrupar_outros_flag,
+    filial: str = None,
 ):
     current_date = datetime.now().strftime("%d/%m/%Y")
 
@@ -41,6 +42,7 @@ def enviar_faturamento_para_api_externa(
         (data_inicial if data_inicial else current_date),
         (data_final if data_final else current_date),
         agrupar_outros=agrupar_outros_flag,
+        filial=filial,
     )
     faturamento_numeros = [f.numero for f in faturamentos]
     faturamentos_json = [json.loads(f.model_dump_json()) for f in faturamentos]
@@ -58,7 +60,7 @@ def enviar_faturamento_para_api_externa(
         db.rollback()
         return
 
-    url_api_externa = f"{url_base}/v2/minoristas/{idEmpresa}/locales/{idLocal}/cajas/{idCaja}/movimientos/lotes"
+    url_api_externa = f"{url_base}/v2/minoristas/{idEmpresa}/locales/{filial}/cajas/{idCaja}/movimientos/lotes"
     try:
         resposta = requests.post(
             url_api_externa, data=faturamentos_json, headers=headers
@@ -72,9 +74,10 @@ def enviar_faturamento_para_api_externa(
         envio.lista_notas = faturamento_numeros
         db.commit()
         logger.info(
-            "Faturamento enviado com sucesso. %s notas enviadas. Status code: %s",
+            "Faturamento enviado com sucesso. %s notas enviadas do centro %s. Status code: %s",
             len(faturamentos),
             resposta.status_code,
+            filial,
         )
         logger.info(resposta.text)
         logger.info(faturamentos_json)
@@ -103,6 +106,7 @@ def enviar_fechamento_diario(
     data_inicial: str,
     data_final: str,
     agrupar_outros_flag: bool = agrupar_outros_flag,
+    filial: str = None,
 ):
     current_date = datetime.now().strftime("%d/%m/%Y")
 
@@ -131,9 +135,10 @@ def enviar_fechamento_diario(
         (data_inicial if data_inicial else current_date),
         (data_final if data_final else current_date),
         agrupar_outros=agrupar_outros_flag,
+        filial=filial,
     )
 
-    url_api_externa = f"{url_base}/v2/minoristas/{idEmpresa}/locales/{idLocal}/cajas/{idCaja}/cierresDiarios"
+    url_api_externa = f"{url_base}/v2/minoristas/{idEmpresa}/locales/{filial}/cajas/{idCaja}/cierresDiarios"
     try:
         resposta = requests.post(url_api_externa, data=fechamento, headers=headers)
         resposta.raise_for_status()
@@ -163,12 +168,14 @@ def enviar_fechamento_diario(
     return fechamento
 
 
-def get_solicitacoes_reenvio():
+def get_solicitacoes_reenvio(
+    filial: str = None,
+):
     lista_solicitacoes: Solicitacoes = []
 
     try:
         url_api_externa = (
-            f"{url_base}/v2/minoristas/{idEmpresa}/locales/{idLocal}/solicitudes"
+            f"{url_base}/v2/minoristas/{idEmpresa}/locales/{filial}/solicitudes"
         )
         resposta = requests.get(url_api_externa, headers=headers)
         resposta.raise_for_status()
@@ -200,6 +207,7 @@ def get_solicitacoes_reenvio():
 
 def verificar_cancelamentos_enviar(
     db: Session,
+    filial: str = None,
 ):
     data_atual = datetime.now().date()
     data_inicial = data_atual - timedelta(days=1) if data_atual.day == 1 else data_atual
@@ -246,6 +254,7 @@ def verificar_cancelamentos_enviar(
             data_inicial.strftime("%d/%m/%Y"),
             data_final.strftime("%d/%m/%Y"),
             filtrar_canceladas=False,
+            filial=filial,
         )
         notas_canceladas = []
         numeros_notas_canceladas = []
@@ -283,7 +292,7 @@ def verificar_cancelamentos_enviar(
         return
 
     # enviar fechamento de cancelamentos para a API externa
-    url_api_externa = f"{url_base}/v2/minoristas/{idEmpresa}/locales/{idLocal}/cajas/{idCaja}/cierresDiarios"
+    url_api_externa = f"{url_base}/v2/minoristas/{idEmpresa}/locales/{filial}/cajas/{idCaja}/cierresDiarios"
     try:
         devolucao_json = json.loads(devolucao.model_dump_json())
         devolucao_json = json.dumps(devolucao_json)
@@ -328,6 +337,7 @@ def verificar_cancelamentos_enviar(
 
 def verificar_devolucoes(
     db: Session,
+    filial: str = None,
 ):
 
     data_atual = datetime.now().date()
@@ -376,7 +386,7 @@ def verificar_devolucoes(
         db.rollback()
         return
 
-    url_api_externa = f"{url_base}/v2/minoristas/{idEmpresa}/locales/{idLocal}/cajas/{idCaja}/cierresDiarios"
+    url_api_externa = f"{url_base}/v2/minoristas/{idEmpresa}/locales/{filial}/cajas/{idCaja}/cierresDiarios"
 
     try:
         devolucao_json = json.loads(devolucao.model_dump_json())
