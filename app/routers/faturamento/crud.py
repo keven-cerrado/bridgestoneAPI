@@ -217,7 +217,7 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
                             item_agregado = deepcopy(itemDetalhes)
                             item_agregado.descripcionArticulo = "Outros"
                             item_agregado.codigoArticulo = "0"
-                            item_agregado.codigoBarras = "0"
+                            item_agregado.codigoBarras = None
                             item_agregado.cantidad = 1
                         else:
                             # item_agregado.importeUnitario += (
@@ -233,7 +233,7 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
                 print(e)
 
         if item_agregado is not None:
-            item_agregado.importeUnitario = round(item_agregado.importeUnitario, 2)
+            item_agregado.importeUnitario = round(item_agregado.importe, 2)
             item_agregado.importe = round(item_agregado.importe, 2)
             itens_modificados.append(item_agregado)
 
