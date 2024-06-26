@@ -204,13 +204,41 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
                     codigoBarras=item.CODIGO_MATERIAL,
                     descripcionArticulo=item.DESC_MATERIAL,
                     cantidad=item.QUANTIDADE,
-                    importeUnitario=item.VLR_UNITARIO,
-                    importe=item.TOTAL_BRUTO + (item.ICMS_ST or 0),
+                    importeUnitario=item.VLR_UNITARIO
+                    + (
+                        (
+                            (item.ICMS_ST / item.QUANTIDADE)
+                            if (item.QUANTIDADE and item.ICMS_ST)
+                            else 0
+                        )
+                        + (
+                            (
+                                (
+                                    (item.ICMS_ST / item.QUANTIDADE)
+                                    if (item.QUANTIDADE and item.ICMS_ST)
+                                    else 0
+                                )
+                                * 1.3
+                                / 100
+                            )
+                            if item.GRUPO_MERC == "4153"
+                            else 0
+                        )
+                    ),
+                    importe=(
+                        item.TOTAL_BRUTO
+                        + (item.ICMS_ST or 0)
+                        + (
+                            ((item.TOTAL_BRUTO + (item.ICMS_ST or 0)) * 1.3 / 100)
+                            if item.GRUPO_MERC == "4153"
+                            else 0
+                        )
+                    ),
                     descuento=abs(item.DESCONTO_ABSOLUTO),
                     recargo=0.0,
                 )
-                if item.GRUPO_MERC == "4153":
-                    itemDetalhes.importe += itemDetalhes.importe * 1.3 / 100
+                # if item.GRUPO_MERC == "4153":
+                #     itemDetalhes.importe += itemDetalhes.importe * 1.3 / 100
                 if item.GRUPO not in grupos_permitidos:
                     if agrupar_outros:
                         if item_agregado is None:
@@ -220,9 +248,9 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
                             item_agregado.codigoBarras = None
                             item_agregado.cantidad = 1
                         else:
-                            # item_agregado.importeUnitario += (
-                            #     itemDetalhes.importeUnitario
-                            # )
+                            item_agregado.importeUnitario += (
+                                itemDetalhes.importeUnitario
+                            )
                             item_agregado.importe += itemDetalhes.importe
                             item_agregado.descuento += itemDetalhes.descuento
                     else:
@@ -233,7 +261,9 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
                 print(e)
 
         if item_agregado is not None:
-            item_agregado.importeUnitario = round(item_agregado.importe, 2)
+            item_agregado.importeUnitario = (
+                round(item_agregado.importe, 2) + item_agregado.descuento
+            )
             item_agregado.importe = round(item_agregado.importe, 2)
             itens_modificados.append(item_agregado)
 
