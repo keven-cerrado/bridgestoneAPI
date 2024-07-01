@@ -97,6 +97,7 @@ class ItemFaturamento(Base):
     PORCENTAGEM_COMISSAO_VENDEDOR = Column(Float)
     PORCENTAGEM_COMISSAO_COLETADOR = Column(Float)
     VALOR_BASE_COMISSAO = Column(Float)
+    HORA_CRIADA = Column(String)
 
 
 class Envios(Base):

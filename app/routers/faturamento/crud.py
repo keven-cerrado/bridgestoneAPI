@@ -119,14 +119,14 @@ def get_fechamento_per_date(
                 cantidadCancelaciones=0,
             )
 
-        fechamento_data = faturamentos[0].fecha
+        fechamento_data = faturamentos[0].fecha.split("T")[0]
         total_vendas = sum([f.total for f in faturamentos])
         qtd_vendas = len(faturamentos)
         qtd_cancelamentos = len([f for f in faturamentos if f.cancelacion])
 
         fechamento: schemas.Fechamento = schemas.Fechamento(
             fechaVentas=fechamento_data,
-            montoVentaLiquida=total_vendas,
+            montoVentaLiquida=round(total_vendas, 2),
             montoCancelaciones=0.0,
             cantidadMovimientos=qtd_vendas,
             cantidadCancelaciones=qtd_cancelamentos,
@@ -189,7 +189,10 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
         )
         clienteSchema = clientes_schemas.Cliente.model_validate(cliente)
         clienteSchema.IDCLIENTE = set_idCliente(clienteSchema.IDCLIENTE, clienteSchema)
-        data_criacao = f"{items[0].DATA_CRIADA.strftime('%Y-%m-%dT%H:%M:%S')}.000-0300"
+        hora_formatada = f"{items[0].HORA_CRIADA[:2]}:{items[0].HORA_CRIADA[2:4]}:{items[0].HORA_CRIADA[4:]}"
+        data_criacao = (
+            f"{items[0].DATA_CRIADA.strftime('%Y-%m-%d')}T{hora_formatada}.000-0300"
+        )
         desconto_total = sum(abs(item.DESCONTO_ABSOLUTO) or 0 for item in items)
         cancelada = True if items[0].CANCELADA else False
         forma_pagamento = items[0].FORMA_PAGAMENTO

@@ -96,6 +96,7 @@ class ItemFaturamentoInDB(BaseModel):
     PORCENTAGEM_COMISSAO_VENDEDOR: float
     PORCENTAGEM_COMISSAO_COLETADOR: float
     VALOR_BASE_COMISSAO: float
+    HORA_CRIADA: str
 
     @model_validator(mode="before")
     def set_defaults(cls, values: Any) -> Any:
