@@ -28,4 +28,6 @@ def converte_base64(usuario, senha):
 headers = {
     "Authorization": converte_base64(usuario, senha),
     "Content-Type": "application/json",
+    "backend-version": "1.0.0",
+    "pdv-version": "1.0.0",
 }

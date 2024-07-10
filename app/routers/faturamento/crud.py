@@ -193,7 +193,9 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
         data_criacao = (
             f"{items[0].DATA_CRIADA.strftime('%Y-%m-%d')}T{hora_formatada}.000-0300"
         )
-        desconto_total = sum(abs(item.DESCONTO_ABSOLUTO) or 0 for item in items)
+        desconto_total = round(
+            sum(abs(item.DESCONTO_ABSOLUTO) or 0 for item in items), 2
+        )
         cancelada = True if items[0].CANCELADA else False
         forma_pagamento = items[0].FORMA_PAGAMENTO
         cond_descricao = items[0].COND_DESCRICAO
@@ -237,7 +239,7 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
                             else 0
                         )
                     ),
-                    descuento=abs(item.DESCONTO_ABSOLUTO),
+                    descuento=round(abs(item.DESCONTO_ABSOLUTO), 2),
                     recargo=0.0,
                 )
                 # if item.GRUPO_MERC == "4153":
@@ -267,6 +269,7 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
             item_agregado.importeUnitario = (
                 round(item_agregado.importe, 2) + item_agregado.descuento
             )
+            item_agregado.descuento = round(item_agregado.descuento, 2)
             item_agregado.importe = round(item_agregado.importe, 2)
             itens_modificados.append(item_agregado)
 
@@ -290,7 +293,7 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
 
         responseScannTech = schemas.ModelScannTech(
             fecha=data_criacao,
-            total=total_faturamento,
+            total=round(total_faturamento, 2),
             numero=numero_nota,
             descuentoTotal=abs(desconto_total),
             recargoTotal=0,
