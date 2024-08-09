@@ -9,14 +9,14 @@ senha = os.getenv("API_SENHA")
 agrupar_outros_flag = True
 
 url_base = "https://test-parceiro.scanntech.com/api-minoristas/api"
-idEmpresa = 74984
+idEmpresa = 88975
 idLocal = 1
 idCaja = 1
 hora_envio_faturamento = "21:00"
 hora_verificacao_reenvio = "21:05"
 hora_verificacao_cancelamentos = "21:10"
 hora_verificacao_devolucoes = "21:15"
-filiais = ["0102", "0103", "0104", "0106", "0107"]
+filiais = ["0101", "0102", "0103", "0104", "0105", "0106", "0107"]
 
 
 def converte_base64(usuario, senha):
