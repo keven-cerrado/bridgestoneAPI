@@ -144,7 +144,7 @@ async def read_solicitacoes(
     solicitacoes = utils.get_solicitacoes_reenvio(filial=centro)
     if not solicitacoes:
         logger.error("Solicitacoes not found")
-        raise HTTPException(status_code=404, detail="Solicitacoes not found")
+        return []
     logger.info(f"Solicitacoes: {solicitacoes}")
     return solicitacoes
 

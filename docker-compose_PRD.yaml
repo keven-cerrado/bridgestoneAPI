@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: api_bridgestone
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/code
+    # environment:
+    #   - ENV_VAR=your_value

@@ -175,7 +175,7 @@ def get_solicitacoes_reenvio(
 
     try:
         url_api_externa = (
-            f"{url_base}/v2/minoristas/{idEmpresa}/locales/{filial}/solicitudes"
+            f"{url_base}/v2/minoristas/{idEmpresa}/locales/1/solicitudes"
         )
         resposta = requests.get(url_api_externa, headers=headers)
         resposta.raise_for_status()
