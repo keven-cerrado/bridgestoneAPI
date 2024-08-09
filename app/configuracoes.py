@@ -8,8 +8,10 @@ senha = os.getenv("API_SENHA")
 # Flag que indica se os itens que não são Bridgestone devem ser agrupados e o valor deve ser enviado como "Outros"
 agrupar_outros_flag = True
 
-url_base = "https://test-parceiro.scanntech.com/api-minoristas/api"
-idEmpresa = 88975
+# url_base = "https://test-parceiro.scanntech.com/api-minoristas/api"
+url_base = "http://parceiro.scanntech.com/api-minoristas/api"
+# idEmpresa = 74984 # Teste
+idEmpresa = 88975 # Produção
 idLocal = 1
 idCaja = 1
 hora_envio_faturamento = "21:00"
