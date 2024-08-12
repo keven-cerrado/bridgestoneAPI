@@ -27,8 +27,9 @@ bot = Bot(token=os.getenv("BOT_TOKEN_TELEGRAM"))
 def tarefa_periodica_envio_faturamento(filial: str = None):
     db = SessionLocal()
     try:
-        for filial in filiais:
-            enviar_faturamento_para_api_externa(db, filial=filial)
+        # for filial in filiais:
+        #     enviar_faturamento_para_api_externa(db, filial=filial)
+        print("Enviando faturamento...")
     finally:
         db.close()
 
@@ -80,8 +81,7 @@ def iniciar_agendamento():
     print(f"Horário de verificação de devoluções: {hora_verificacao_devolucoes}")
 
     schedule.every().day.at(hora_envio_faturamento).do(
-        # tarefa_periodica_envio_faturamento
-        print("Executando tarefa_periodica_envio_faturamento")
+        tarefa_periodica_envio_faturamento
     )
     # schedule.every().day.at(hora_verificacao_reenvio).do(
     #     start_verificacao_reenvio
