@@ -47,4 +47,4 @@ git checkout main
 pip install --no-cache-dir -r /code/requirements.txt
 
 # Inicie a aplicação
-fastapi run /code/app/main.py --host 0.0.0.0 --port 8000
+uvicorn /code/app/main.py --host 0.0.0.0 --port 8000
