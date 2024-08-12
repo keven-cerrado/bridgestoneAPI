@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM tiangolo/uvicorn-gunicorn-fastapi:python:3.10
 
 # Defina o diretório de trabalho
 WORKDIR /code
