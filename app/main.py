@@ -26,7 +26,10 @@ app.include_router(faturamento.router)
 # Função para ser chamada no evento de startup
 def iniciar_agendamento_thread():
     print("Iniciando agendamento...")
-    iniciar_agendamento()
+    try:
+        iniciar_agendamento()
+    except Exception as e:
+        print(f"Erro ao iniciar agendamento: {e}")
 
 
 # Adicionar o evento de startup
