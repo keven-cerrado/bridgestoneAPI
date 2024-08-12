@@ -9,7 +9,6 @@ else
     # COMANDOS DE INSTALAÇÃO
     apt-get update -y
     apt-get install -y git
-    pip install gunicorn
 
     # Ajustar timezone
     rm -rf /etc/localtime
