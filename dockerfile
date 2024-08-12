@@ -1,22 +1,21 @@
 FROM python:3.10
 
-# Set the working directory
+# Defina o diretório de trabalho
 WORKDIR /code
 
-# Copy the current directory contents into the container at /code
+# Copie o arquivo de requisitos e o script de execução
 COPY ./requirements.txt /code/requirements.txt
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r /code/requirements.txt
+COPY ./run.sh /code/run.sh
 
-# Copy the current directory contents into the container at /code
+# Instale dependências do sistema e do Python
+RUN apt-get update -y && \
+    apt-get install -y git openssh-client && \
+    pip install --no-cache-dir -r /code/requirements.txt && \
+    chmod +x /code/run.sh
+
+# Copie o código da aplicação
 COPY ./app /code/app
 
-# Run code.py when the container launches
-# CMD ["fastapi", "run", "code/main.py", "--port", "80"]
-
-# Copie o script de inicialização
-COPY start.sh /code/start.sh
-
-# Comando para iniciar a aplicação usando o script de inicialização
-CMD ["bash", "/code/start.sh"]
+# Comando para iniciar o script de execução
+CMD ["bash", "/code/run.sh"]
