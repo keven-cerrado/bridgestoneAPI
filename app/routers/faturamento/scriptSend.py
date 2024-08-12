@@ -79,9 +79,10 @@ def iniciar_agendamento():
     print(f"Horário de verificação de reenvio: {hora_verificacao_reenvio}")
     print(f"Horário de verificação de devoluções: {hora_verificacao_devolucoes}")
 
-    # schedule.every().day.at(hora_envio_faturamento).do(
-    #     tarefa_periodica_envio_faturamento
-    # )
+    schedule.every().day.at(hora_envio_faturamento).do(
+        # tarefa_periodica_envio_faturamento
+        print("Executando tarefa_periodica_envio_faturamento")
+    )
     # schedule.every().day.at(hora_verificacao_reenvio).do(
     #     start_verificacao_reenvio
     # )
