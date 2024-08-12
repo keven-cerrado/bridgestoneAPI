@@ -7,6 +7,8 @@ from .database import SessionLocal
 
 app = FastAPI()
 
+print("Iniciando aplicação...")
+
 
 # Dependency
 def get_db():
