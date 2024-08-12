@@ -15,7 +15,7 @@ RUN apt-get update -y && \
     chmod +x /code/run.sh
 
 # Copie o código da aplicação
-COPY ./app /code/app
+COPY ./app /code/
 
 # Comando para iniciar o script de execução
 CMD ["bash", "/code/run.sh"]

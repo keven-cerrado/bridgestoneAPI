@@ -27,7 +27,7 @@ else
 fi
 
 # Vá para o diretório do projeto
-cd /code/app
+cd /code
 
 # Realize o login no GitHub (você precisa ter suas credenciais ou chave SSH configuradas)
 if [ -z "$(git config --global user.name)" ]; then
