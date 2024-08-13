@@ -19,8 +19,8 @@ def get_db():
 
 
 # ssl
-ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-ssl_context.load_cert_chain("./app/cert/cert.pem", "./app/cert/key.pem")
+# ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+# ssl_context.load_cert_chain("./app/cert/cert.pem", "./app/cert/key.pem")
 
 
 # app.include_router(login.router)
