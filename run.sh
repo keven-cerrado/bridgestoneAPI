@@ -30,10 +30,10 @@ fi
 cd /code
 
 # Realize o login no GitHub (você precisa ter suas credenciais ou chave SSH configuradas)
-if [ -z "$(git config --global user.name)" ]; then
-    git config --global user.name "keven-cerrado"
-    git config --global user.email "keven.barbosa@cerradopneus.com.br"
-fi
+# if [ -z "$(git config --global user.name)" ]; then
+#     git config --global user.name "keven-cerrado"
+#     git config --global user.email "keven.barbosa@cerradopneus.com.br"
+# fi
 
 # Atualiza o repositório
 git init
