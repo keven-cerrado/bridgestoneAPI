@@ -36,7 +36,7 @@ app.include_router(faturamento.router)
 #         print(f"Erro ao iniciar agendamento: {e}")
 
 
-# # Adicionar o evento de startup
+# Adicionar o evento de startup
 # app.add_event_handler(
 #     "startup", lambda: threading.Thread(target=iniciar_agendamento_thread).start()
 # )
