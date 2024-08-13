@@ -4,6 +4,7 @@ from app.routers.faturamento.scriptSend import iniciar_agendamento
 from .routers.login import login
 from .routers.faturamento import faturamento
 from .database import SessionLocal
+import ssl
 
 app = FastAPI()
 
@@ -15,6 +16,11 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+# ssl
+ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+ssl_context.load_cert_chain("./app/cert/cert.pem", "./app/cert/key.pem")
 
 
 # app.include_router(login.router)

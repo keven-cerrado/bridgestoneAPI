@@ -28,7 +28,8 @@ def tarefa_periodica_envio_faturamento(filial: str = None):
     db = SessionLocal()
     try:
         for filial in filiais:
-            enviar_faturamento_para_api_externa(db, filial=filial)
+            envio = enviar_faturamento_para_api_externa(db, filial=filial)
+            return envio
         # print("Enviando faturamento...")
     finally:
         db.close()
@@ -63,13 +64,16 @@ async def verificar_reenvio(filial: str = None):
             qtd_solicitacoes = len(solicitacoes)
             await send_message(
                 f"Existem {qtd_solicitacoes} solicitações de reenvio pendentes. Centro: {filial}"
+                + "\n\n".join([f"{solicitacao}" for solicitacao in solicitacoes])
             )
+        return solicitacoes
 
 
 def start_verificacao_reenvio():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(verificar_reenvio())
+    reenvios = loop.run_until_complete(verificar_reenvio())
+    return reenvios
 
 
 def iniciar_agendamento():
