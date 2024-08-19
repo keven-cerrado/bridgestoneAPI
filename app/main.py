@@ -3,6 +3,7 @@ from fastapi import FastAPI, Depends
 from app.routers.faturamento.scriptSend import iniciar_agendamento
 from .routers.login import login
 from .routers.faturamento import faturamento
+from .routers.envios import envios
 from .database import SessionLocal
 import ssl
 
@@ -25,6 +26,7 @@ ssl_context.load_cert_chain("./app/cert/cert.pem", "./app/cert/key.pem")
 
 # app.include_router(login.router)
 app.include_router(faturamento.router)
+app.include_router(envios.router)
 
 
 # # Função para ser chamada no evento de startup
