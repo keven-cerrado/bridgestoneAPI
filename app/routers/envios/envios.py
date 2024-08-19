@@ -43,7 +43,7 @@ async def enviar_faturamento():
 
 @router.get("/verificar/reenvio", response_model=List[schemas.Solicitacoes])
 async def verificar_reenvio():
-    verificar = scriptSend.start_verificacao_reenvio()
+    verificar = scriptSend.verificar_reenvio(filial=filiais)
     if not verificar:
         logger.error("Reenvio não verificado")
         raise HTTPException(status_code=500, detail="Reenvio não verificado")
