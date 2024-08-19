@@ -58,15 +58,21 @@ async def send_message(message):
 
 
 async def verificar_reenvio(filial: str = None):
-    for filial in filiais:
-        solicitacoes = get_solicitacoes_reenvio(filial=filial)
-        if solicitacoes:
-            qtd_solicitacoes = len(solicitacoes)
-            await send_message(
-                f"Existem {qtd_solicitacoes} solicitações de reenvio pendentes. Centro: {filial}"
-                + "\n\n".join([f"{solicitacao}" for solicitacao in solicitacoes])
-            )
-        return solicitacoes
+    resultado = []
+    try:
+        for filial in filiais:
+            solicitacoes = get_solicitacoes_reenvio(filial=filial)
+            if solicitacoes:
+                qtd_solicitacoes = len(solicitacoes)
+                await send_message(
+                    f"Existem {qtd_solicitacoes} solicitações de reenvio pendentes. Centro: {filial}"
+                    + "\n\n".join([f"{solicitacao}" for solicitacao in solicitacoes])
+                )
+                resultado.extend(solicitacoes)
+        return resultado
+    except Exception as e:
+        print(f"Erro ao verificar reenvio: {e}")
+        return resultado
 
 
 def start_verificacao_reenvio():
