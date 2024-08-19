@@ -31,38 +31,56 @@ else:
     logger = logging.getLogger(__name__)
 
 
-@router.get("/enviar/faturamento", response_model=List[schemas.ModelScannTech])
+@router.get("/enviar/faturamento")
 async def enviar_faturamento():
-    enviar = scriptSend.tarefa_periodica_envio_faturamento(filial=filiais)
-    if not enviar:
-        logger.error("Faturamento não enviado")
-        raise HTTPException(status_code=500, detail="Faturamento não enviado")
-    logger.info("Faturamento enviado")
-    return enviar
+    try:
+        enviar = scriptSend.tarefa_periodica_envio_faturamento(filial=filiais)
+        logger.info("Faturamento enviado")
+        return enviar
+    except Exception as e:
+        logger.error(f"Erro ao enviar faturamento: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro ao enviar faturamento: {e}")
+    
+
+@router.get("/enviar/fechamento")
+async def enviar_fechamento():
+    try:
+        enviar = scriptSend.tarefa_periodica_envio_fechamento(filial=filiais)
+        logger.info("Fechamento enviado")
+        return enviar
+    except Exception as e:
+        logger.error(f"Erro ao enviar fechamento: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro ao enviar fechamento: {e}")
 
 
-@router.get("/verificar/reenvio", response_model=List[schemas.Solicitacoes])
+@router.get("/verificar/reenvio")
 async def verificar_reenvio():
-    verificar = await scriptSend.verificar_reenvio(filial=filiais)
-    logger.info("Reenvio verificado")
-    return verificar
+    try:
+        verificar = scriptSend.verificar_reenvio(filial=filiais)
+        logger.info("Reenvio verificado")
+        return verificar
+    except Exception as e:
+        logger.error(f"Erro ao verificar reenvio: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro ao verificar reenvio: {e}")
 
 
 @router.get("/verificar/cancelamentos")
 async def verificar_cancelamentos():
-    verificar = scriptSend.tarefa_periodica_verificacao_cancelamentos(filial=filiais)
-    if not verificar:
-        logger.error("Cancelamentos não verificados")
-        raise HTTPException(status_code=500, detail="Cancelamentos não verificados")
-    logger.info("Cancelamentos verificados")
-    return {"message": "Cancelamentos verificados"}
+    try:
+        verificar = scriptSend.tarefa_periodica_verificacao_cancelamentos(filial=filiais)
+        logger.info("Cancelamentos verificados")
+        return verificar
+    except Exception as e:
+        logger.error(f"Erro ao verificar cancelamentos: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro ao verificar cancelamentos: {e}")
 
 
 @router.get("/verificar/devolucoes")
 async def verificar_devolucoes():
-    verificar = scriptSend.tarefa_periodica_verificacao_devolucoes(filial=filiais)
-    if not verificar:
-        logger.error("Devoluções não verificadas")
-        raise HTTPException(status_code=500, detail="Devoluções não verificadas")
-    logger.info("Devoluções verificadas")
-    return {"message": "Devoluções verificadas"}
+    try:
+        verificar = scriptSend.tarefa_periodica_verificacao_devolucoes(filial=filiais)
+        logger.info("Devoluções verificadas")
+        return verificar
+    except Exception as e:
+        logger.error(f"Erro ao verificar devoluções: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro ao verificar devoluções: {e}")

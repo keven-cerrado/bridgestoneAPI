@@ -18,6 +18,7 @@ from app.routers.faturamento.utils import (
     get_solicitacoes_reenvio,
     verificar_cancelamentos_enviar,
     verificar_devolucoes,
+    enviar_fechamento_diario
 )
 
 
@@ -27,19 +28,43 @@ bot = Bot(token=os.getenv("BOT_TOKEN_TELEGRAM"))
 def tarefa_periodica_envio_faturamento(filial: str = None):
     db = SessionLocal()
     try:
+        envios = []
         for filial in filiais:
             envio = enviar_faturamento_para_api_externa(db, filial=filial)
-            return envio
-        # print("Enviando faturamento...")
+            envios.append(envio)
+            print(f"Enviando faturamento da filial {filial}")
+        return envios
+    except Exception as e:
+        print(f"Erro ao enviar faturamento: {e}")
+        return []
     finally:
         db.close()
+        
+def tarefa_periodica_envio_fechamento(filial: str = None):
+    db = SessionLocal()
+    try:
+        envios = []
+        for filial in filiais:
+            envio = enviar_fechamento_diario(db, filial=filial)
+            envios.append(envio)
+            print(f"Enviando fechamento da filial {filial}")
+        return envios
+    except Exception as e:
+        print(f"Erro ao enviar fechamento: {e}")
+        return []
 
 
 def tarefa_periodica_verificacao_cancelamentos(filial: str = None):
     db = SessionLocal()
     try:
+        cancelamentos = []
         for filial in filiais:
-            verificar_cancelamentos_enviar(db, filial=filial)
+            cancelamento = verificar_cancelamentos_enviar(db, filial=filial)
+            cancelamentos.append(cancelamento)
+        return cancelamentos
+    except Exception as e:
+        print(f"Erro ao verificar cancelamentos: {e}")
+        return []
     finally:
         db.close()
 
@@ -47,8 +72,14 @@ def tarefa_periodica_verificacao_cancelamentos(filial: str = None):
 def tarefa_periodica_verificacao_devolucoes(filial: str = None):
     db = SessionLocal()
     try:
+        devolucoes = []
         for filial in filiais:
-            verificar_devolucoes(db, filial=filial)
+            devolucao = verificar_devolucoes(db, filial=filial)
+            devolucoes.append(devolucao)
+        return devolucoes
+    except Exception as e:
+        print(f"Erro ao verificar devoluções: {e}")
+        return []
     finally:
         db.close()
 

@@ -103,8 +103,8 @@ def enviar_faturamento_para_api_externa(
 
 def enviar_fechamento_diario(
     db: Session,
-    data_inicial: str,
-    data_final: str,
+    data_inicial: str = None,
+    data_final: str = None,
     agrupar_outros_flag: bool = agrupar_outros_flag,
     filial: str = None,
 ):
@@ -334,6 +334,8 @@ def verificar_cancelamentos_enviar(
         print("Erro de conexão ao enviar fechamento de cancelamentos:", err)
         print(devolucao)
 
+    return devolucao
+
 
 def verificar_devolucoes(
     db: Session,
@@ -428,3 +430,5 @@ def verificar_devolucoes(
         logger.error(devolucao)
         print("Erro de conexão ao enviar fechamento de devoluções:", err)
         print(devolucao)
+
+    return devolucao
