@@ -26,7 +26,7 @@ def get_faturamento(
                 models.ItemFaturamento.NUMERO_NOTA.isnot(None)
                 & models.ItemFaturamento.RESULTADO_FATURAMENTO.isnot(None)
                 & models.ItemFaturamento.COMISSAO_TIPO.like("VENDA")
-                & models.ItemFaturamento.TIPO_ORDEM.not_like("ZVSR")
+                # & models.ItemFaturamento.TIPO_ORDEM.not_like("ZVSR")
                 & (
                     models.ItemFaturamento.CFOP.not_like("5117AA")
                     | models.ItemFaturamento.CFOP.not_like("6117AA")
@@ -66,7 +66,7 @@ def get_faturamento_per_date(
                 models.ItemFaturamento.NUMERO_NOTA.isnot(None)
                 & models.ItemFaturamento.RESULTADO_FATURAMENTO.isnot(None)
                 & models.ItemFaturamento.COMISSAO_TIPO.like("VENDA")
-                & models.ItemFaturamento.TIPO_ORDEM.not_like("ZVSR")
+                # & models.ItemFaturamento.TIPO_ORDEM.not_like("ZVSR")
                 & (
                     models.ItemFaturamento.CFOP.not_like("5117AA")
                     | models.ItemFaturamento.CFOP.not_like("6117AA")
