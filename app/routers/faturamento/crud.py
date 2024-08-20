@@ -32,7 +32,7 @@ def get_faturamento(
                     | models.ItemFaturamento.CFOP.not_like("6117AA")
                 )
                 # & models.ItemFaturamento.CENTRO.not_like("02%")
-                # & models.ItemFaturamento.CENTRO.not_like("03%")
+                & models.ItemFaturamento.CENTRO.not_like("03%")
                 # & models.ItemFaturamento.CENTRO.not_like("0105")
                 & (models.ItemFaturamento.CENTRO.like(filial) if filial else True)
             )
@@ -72,7 +72,7 @@ def get_faturamento_per_date(
                     | models.ItemFaturamento.CFOP.not_like("6117AA")
                 )
                 # & models.ItemFaturamento.CENTRO.not_like("02%")
-                # & models.ItemFaturamento.CENTRO.not_like("03%")
+                & models.ItemFaturamento.CENTRO.not_like("03%")
                 # & models.ItemFaturamento.CENTRO.not_like("0105")
                 & (models.ItemFaturamento.CENTRO.like(filial) if filial else True)
                 & (
