@@ -1,12 +1,19 @@
 import os
 import logging
 from logging.handlers import TimedRotatingFileHandler
+from app.configuracoes import limpar_arquivos_antigos
+
 
 def setup_logger():
     # Verifica se a pasta de log existe, se não, cria
     log_directory = "logs"
     if not os.path.exists(log_directory):
         os.makedirs(log_directory)
+
+    # Limpar arquivos antigos
+    limpar_arquivos_antigos(
+        log_directory, 60
+    )  # 30 dias, você pode ajustar conforme necessário
 
     # Logger setup
     logger = logging.getLogger(__name__)

@@ -1,5 +1,6 @@
 import base64
 import os
+import time
 
 
 usuario = os.getenv("API_USUARIO")
@@ -7,6 +8,9 @@ senha = os.getenv("API_SENHA")
 
 # Flag que indica se os itens que não são Bridgestone devem ser agrupados e o valor deve ser enviado como "Outros"
 agrupar_outros_flag = True
+
+# tempo para manter arquivo de log e data
+tempo_manter_arquivo = 60 # dias
 
 # url_base = "https://test-parceiro.scanntech.com/api-minoristas/api"
 url_base = "http://parceiro.scanntech.com/api-minoristas/api"
@@ -33,3 +37,16 @@ headers = {
     "backend-version": "1.0.0",
     "pdv-version": "1.0.0",
 }
+
+def limpar_arquivos_antigos(diretorio, dias):
+    agora = time.time()
+    periodo = dias * 86400  # Convertendo dias para segundos
+
+    if os.path.exists(diretorio):
+        for arquivo in os.listdir(diretorio):
+            caminho_arquivo = os.path.join(diretorio, arquivo)
+            if os.path.isfile(caminho_arquivo):
+                idade_arquivo = agora - os.path.getmtime(caminho_arquivo)
+                if idade_arquivo > periodo:
+                    os.remove(caminho_arquivo)
+                    print(f"Arquivo removido: {caminho_arquivo}")

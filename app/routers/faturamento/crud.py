@@ -7,8 +7,11 @@ from ..clientes import schemas as clientes_schemas
 from ..clientes import models as clientes_models
 from collections import defaultdict
 from datetime import datetime, date
+import os
+import pandas as pd
 from app.configuracoes import (
     agrupar_outros_flag,
+    limpar_arquivos_antigos,
 )
 
 
@@ -41,7 +44,9 @@ def get_faturamento(
             .limit(limit)
             .all()
         )
-        return aggregate_by_numero_nota(db, faturamentos, agrupar_outros=agrupar_outros)
+        resposta = aggregate_by_numero_nota(db, faturamentos, agrupar_outros=agrupar_outros)
+        generate_csv(resposta)
+        return resposta
     except Exception as e:
         print(e)
         return None
@@ -85,7 +90,9 @@ def get_faturamento_per_date(
             .order_by(models.ItemFaturamento.DATA_CRIADA.desc())
             .all()
         )
-        return aggregate_by_numero_nota(db, faturamentos, agrupar_outros=agrupar_outros)
+        resposta = aggregate_by_numero_nota(db, faturamentos, agrupar_outros=agrupar_outros)
+        generate_csv_and_xlsx(resposta, data_inicial)
+        return resposta
     except Exception as e:
         print(e)
         return None
@@ -151,6 +158,60 @@ def set_idCliente(v, values: clientes_schemas.Cliente):
     )  # Últimos 2 dígitos do CPF/CNPJ
     return ddd + last_4_phone + first_5_cpf_cnpj + last_2_cpf_cnpj
 
+def generate_csv_and_xlsx(faturamentos: List[schemas.ModelScannTech], data: date = None):
+    data_list = []
+    for faturamento in faturamentos:
+        data_list.append({
+            'data': faturamento.fecha,
+            'total': faturamento.total,
+            'numero_nf': faturamento.numero,
+            'desconto_total': faturamento.descuentoTotal,
+            'acrescimos_total': faturamento.recargoTotal,
+            'cancelada': faturamento.cancelacion,
+            'idCliente': faturamento.idCliente,
+            'documentoCliente': faturamento.documentoCliente,
+            'canal_venda': faturamento.codigoCanalVenta,
+            'descricao_canal_venda': faturamento.descripcionCanalVenta,
+            'forma_pagamento': faturamento.pagos[0].codigoTipoPago,
+            'valor_pagamento': faturamento.pagos[0].importe,
+            'codigoBarras': faturamento.detalles[0].codigoBarras,
+            'codigoSAP': faturamento.detalles[0].codigoArticulo,
+            'descricao_produto': faturamento.detalles[0].descripcionArticulo,
+            'quantidade': faturamento.detalles[0].cantidad,
+            'valorUnitario': faturamento.detalles[0].importeUnitario,
+            'desconto': faturamento.detalles[0].descuento,
+            'acrescimo_item': faturamento.detalles[0].recargo
+        })
+
+    df = pd.DataFrame(data_list)
+    
+    # Create the 'data' directory if it doesn't exist
+    if not os.path.exists('data'):
+        os.makedirs('data')
+    
+    # Limpar arquivos antigos
+    limpar_arquivos_antigos('data', 60)  # 60 dias, você pode ajustar conforme necessário
+    
+    # Generate the filename based on the current date
+    current_date = data or datetime.now().strftime("%Y-%m-%d")
+    
+    # Create a folder for each day
+    folder_path = f"data/{current_date}"
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    
+    # Generate the filename for the CSV file
+    csv_filename = f"{folder_path}/faturamentos_{current_date}.csv"
+    
+    # Generate the filename for the Excel file
+    xlsx_filename = f"{folder_path}/faturamentos_{current_date}.xlsx"
+    
+    # Write the CSV file
+    df.to_csv(csv_filename, index=False)
+    
+    # Write the Excel file
+    df.to_excel(xlsx_filename, index=False)
+
 
 def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = True):
     grouped = defaultdict(list)
@@ -176,12 +237,15 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
     for faturamento in faturamentos:
         faturamento: models.ItemFaturamento
         grouped[faturamento.NUMERO_NOTA].append(faturamento)
+        total_faturamento = faturamento.TOTAL_BRUTO
 
     # Construir resposta agregada
     aggregated = []
     for numero_nota, items in grouped.items():
         items: List[schemas.ItemFaturamentoInDB]
-        total_faturamento = items[0].TOTALNF
+        total_faturamento = 0
+        for item in items:
+            total_faturamento += item.TOTAL_BRUTO
         cliente = (
             db.query(clientes_models.Cliente)
             .filter(clientes_models.Cliente.ID == items[0].CLIENTE_ID)
@@ -305,7 +369,7 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
             detalles=itens_modificados,
             pagos=[
                 schemas.Pagos(
-                    importe=total_faturamento,
+                    importe=round(total_faturamento, 2),
                     codigoTipoPago=condicoes_pagamento.get(forma_pagamento, 0),
                     documentoCliente=None,
                 )
