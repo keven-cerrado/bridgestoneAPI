@@ -20,6 +20,7 @@ def get_faturamento(
     skip: int = 0,
     limit: int = 100,
     agrupar_outros: bool = True,
+    filtrar_canceladas: bool = True,
     filial: str = None,
 ):
     try:
@@ -38,6 +39,11 @@ def get_faturamento(
                 & models.ItemFaturamento.CENTRO.not_like("03%")
                 # & models.ItemFaturamento.CENTRO.not_like("0105")
                 & (models.ItemFaturamento.CENTRO.like(filial) if filial else True)
+                & (
+                    models.ItemFaturamento.CANCELADA.is_(None)
+                    if filtrar_canceladas
+                    else True
+                )
             )
             .order_by(models.ItemFaturamento.DATA_CRIADA.desc())
             .offset(skip)
