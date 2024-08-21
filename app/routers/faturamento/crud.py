@@ -45,7 +45,7 @@ def get_faturamento(
             .all()
         )
         resposta = aggregate_by_numero_nota(db, faturamentos, agrupar_outros=agrupar_outros)
-        generate_csv(resposta)
+        generate_csv_and_xlsx(resposta)
         return resposta
     except Exception as e:
         print(e)
