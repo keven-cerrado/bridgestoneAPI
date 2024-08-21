@@ -23,6 +23,19 @@ def get_faturamento(
     filtrar_canceladas: bool = True,
     filial: str = None,
 ):
+    """Função que retorna o faturamento de acordo com os parâmetros passados
+
+    Args:
+        db (Session): sessão do banco de dados
+        skip (int, optional): Quantidade de registros a serem pulados. Defaults to 0.
+        limit (int, optional): Máximo de registros a serem retornados. Defaults to 100.
+        agrupar_outros (bool, optional): flag para anonimizar os produtos que não são bridgestone. Defaults to True.
+        filtrar_canceladas (bool, optional): flag para filtrar as notas canceladas. Defaults to True.
+        filial (str, optional): Filial a ser filtrada. Defaults to None.
+
+    Returns:
+        List[schemas.ModelScannTech]: Lista de faturamentos
+    """
     try:
         faturamentos = (
             db.query(models.ItemFaturamento)
@@ -50,7 +63,9 @@ def get_faturamento(
             .limit(limit)
             .all()
         )
-        resposta = aggregate_by_numero_nota(db, faturamentos, agrupar_outros=agrupar_outros)
+        resposta = aggregate_by_numero_nota(
+            db, faturamentos, agrupar_outros=agrupar_outros
+        )
         generate_csv_and_xlsx(resposta)
         return resposta
     except Exception as e:
@@ -67,6 +82,21 @@ def get_faturamento_per_date(
     filtrar_canceladas: bool = True,
     filial: str = None,
 ) -> List[schemas.ModelScannTech]:
+    """
+    Retorna o faturamento por data dentro de um intervalo específico.
+    Args:
+        db (Session): Objeto de sessão do banco de dados.
+        data_inicial (str): Data inicial no formato "dd/mm/yyyy".
+        data_final (str): Data final no formato "dd/mm/yyyy".
+        agrupar_outros (bool, optional): flag para anonimizar os produtos que não são bridgestone. Defaults to True.
+        filtrar_canceladas (bool, optional): Indica se deve filtrar as notas canceladas. O padrão é True.
+        filial (str, optional): Filtra o faturamento por filial. O padrão é None.
+    Returns:
+        List[schemas.ModelScannTech]: Lista de objetos ModelScannTech contendo o faturamento.
+    Raises:
+        None
+    """
+
     data_inicial = datetime.strptime(data_inicial, "%d/%m/%Y").date()
     data_final = datetime.strptime(data_final, "%d/%m/%Y").date()
 
@@ -96,7 +126,9 @@ def get_faturamento_per_date(
             .order_by(models.ItemFaturamento.DATA_CRIADA.desc())
             .all()
         )
-        resposta = aggregate_by_numero_nota(db, faturamentos, agrupar_outros=agrupar_outros)
+        resposta = aggregate_by_numero_nota(
+            db, faturamentos, agrupar_outros=agrupar_outros
+        )
         generate_csv_and_xlsx(resposta, data_inicial)
         return resposta
     except Exception as e:
@@ -111,6 +143,19 @@ def get_fechamento_per_date(
     agrupar_outros: bool = True,
     filial: str = None,
 ):
+    """
+    Obtém o fechamento de vendas para um determinado intervalo de datas.
+
+    Args:
+        db (Session): A sessão do banco de dados.
+        data_inicial (str): A data inicial do intervalo de datas.
+        data_final (str): A data final do intervalo de datas.
+        agrupar_outros (bool, optional): flag para anonimizar os produtos que não são bridgestone. Defaults to True.
+        filial (str, optional): A filial a ser considerada. O padrão é None.
+
+    Returns:
+        Fechamento: O objeto Fechamento contendo as informações do fechamento de vendas.
+    """
     current_date = datetime.now().strftime("%d/%m/%Y")
 
     try:
@@ -152,6 +197,22 @@ def get_fechamento_per_date(
 
 
 def set_idCliente(v, values: clientes_schemas.Cliente):
+    def set_idCliente(v, values: clientes_schemas.Cliente) -> str:
+        """
+        Gera um ID de cliente com base nas informações fornecidas.
+
+        Args:
+            v (int): Valor de referência.
+            values (clientes_schemas.Cliente): Objeto contendo as informações do cliente.
+
+        Returns:
+            str: ID de cliente gerado.
+
+        Exemplo:
+            >>> set_idCliente(1, clientes_schemas.Cliente(TELEFONE1="1234567890", CPF_CNPJ="12345678901"))
+            '12123456789012345'
+        """
+
     ddd = values.TELEFONE1[:2] if values.TELEFONE1 else "00"  # DDD do telefone
     last_4_phone = (
         values.TELEFONE1[-4:] if values.TELEFONE1 else "0000"
@@ -164,62 +225,84 @@ def set_idCliente(v, values: clientes_schemas.Cliente):
     )  # Últimos 2 dígitos do CPF/CNPJ
     return ddd + last_4_phone + first_5_cpf_cnpj + last_2_cpf_cnpj
 
-def generate_csv_and_xlsx(faturamentos: List[schemas.ModelScannTech], data: date = None):
-    data_list = []
-    for faturamento in faturamentos:
-        data_list.append({
-            'data': faturamento.fecha,
-            'total': faturamento.total,
-            'numero_nf': faturamento.numero,
-            'desconto_total': faturamento.descuentoTotal,
-            'acrescimos_total': faturamento.recargoTotal,
-            'cancelada': faturamento.cancelacion,
-            'idCliente': faturamento.idCliente,
-            'documentoCliente': faturamento.documentoCliente,
-            'canal_venda': faturamento.codigoCanalVenta,
-            'descricao_canal_venda': faturamento.descripcionCanalVenta,
-            'forma_pagamento': faturamento.pagos[0].codigoTipoPago,
-            'valor_pagamento': faturamento.pagos[0].importe,
-            'codigoBarras': faturamento.detalles[0].codigoBarras,
-            'codigoSAP': faturamento.detalles[0].codigoArticulo,
-            'descricao_produto': faturamento.detalles[0].descripcionArticulo,
-            'quantidade': faturamento.detalles[0].cantidad,
-            'valorUnitario': faturamento.detalles[0].importeUnitario,
-            'desconto': faturamento.detalles[0].descuento,
-            'acrescimo_item': faturamento.detalles[0].recargo
-        })
 
+def generate_csv_and_xlsx(
+    faturamentos: List[schemas.ModelScannTech], data: date = None
+):
+    data_list = []
+    # Transform the data into a list of dictionaries
+    for faturamento in faturamentos:
+        data_list.append(
+            {
+                "data": faturamento.fecha,
+                "total": faturamento.total,
+                "numero_nf": faturamento.numero,
+                "desconto_total": faturamento.descuentoTotal,
+                "acrescimos_total": faturamento.recargoTotal,
+                "cancelada": faturamento.cancelacion,
+                "idCliente": faturamento.idCliente,
+                "documentoCliente": faturamento.documentoCliente,
+                "canal_venda": faturamento.codigoCanalVenta,
+                "descricao_canal_venda": faturamento.descripcionCanalVenta,
+                "forma_pagamento": faturamento.pagos[0].codigoTipoPago,
+                "valor_pagamento": faturamento.pagos[0].importe,
+                "codigoBarras": faturamento.detalles[0].codigoBarras,
+                "codigoSAP": faturamento.detalles[0].codigoArticulo,
+                "descricao_produto": faturamento.detalles[0].descripcionArticulo,
+                "quantidade": faturamento.detalles[0].cantidad,
+                "valorUnitario": faturamento.detalles[0].importeUnitario,
+                "desconto": faturamento.detalles[0].descuento,
+                "acrescimo_item": faturamento.detalles[0].recargo,
+            }
+        )
+
+    # Create a DataFrame from the list of dictionaries
     df = pd.DataFrame(data_list)
-    
+
     # Create the 'data' directory if it doesn't exist
-    if not os.path.exists('data'):
-        os.makedirs('data')
-    
+    if not os.path.exists("data"):
+        os.makedirs("data")
+
     # Limpar arquivos antigos
-    limpar_arquivos_antigos('data', 60)  # 60 dias, você pode ajustar conforme necessário
-    
+    limpar_arquivos_antigos(
+        "data", 60
+    )  # 60 dias, você pode ajustar conforme necessário
+
     # Generate the filename based on the current date
     current_date = data or datetime.now().strftime("%Y-%m-%d")
-    
+
     # Create a folder for each day
     folder_path = f"data/{current_date}"
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
-    
+
     # Generate the filename for the CSV file
     csv_filename = f"{folder_path}/faturamentos_{current_date}.csv"
-    
+
     # Generate the filename for the Excel file
     xlsx_filename = f"{folder_path}/faturamentos_{current_date}.xlsx"
-    
+
     # Write the CSV file
     df.to_csv(csv_filename, index=False)
-    
+
     # Write the Excel file
     df.to_excel(xlsx_filename, index=False)
 
 
 def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = True):
+    """
+    Agrupa os itens de faturamento por número de nota e retorna uma resposta agregada.
+    Args:
+        db (Session): Objeto de sessão do banco de dados.
+        faturamentos: Lista de faturamentos.
+        agrupar_outros (bool, optional): Indica se os itens devem ser agrupados como "Outros" caso não pertençam aos grupos permitidos. O padrão é True.
+    Returns:
+        List: Lista de objetos de resposta agregada.
+    Raises:
+        None
+    Examples:
+        aggregate_by_numero_nota(db, faturamentos)
+    """
     grouped = defaultdict(list)
 
     # Listas de família e grupos permitidos
@@ -279,6 +362,7 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
                     codigoBarras=item.CODIGO_MATERIAL,
                     descripcionArticulo=item.DESC_MATERIAL,
                     cantidad=item.QUANTIDADE,
+                    # Cálculo do importe unitário, incluindo o ICMS ST e o adicional de 1.3% para pneus importados
                     importeUnitario=item.VLR_UNITARIO
                     + (
                         (
@@ -300,6 +384,7 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
                             else 0
                         )
                     ),
+                    # Cálculo do importe total, incluindo o ICMS ST e o adicional de 1.3% para pneus importados
                     importe=(
                         item.TOTAL_BRUTO
                         + (item.ICMS_ST or 0)
@@ -336,13 +421,15 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
                 print(e)
 
         if item_agregado is not None:
+            # Ajuste do importe unitário para arredondar duas casas e adicionar o desconto
             item_agregado.importeUnitario = (
                 round(item_agregado.importe, 2) + item_agregado.descuento
             )
             item_agregado.descuento = round(item_agregado.descuento, 2)
             item_agregado.importe = round(item_agregado.importe, 2)
             itens_modificados.append(item_agregado)
-
+        
+        # Mapeamento de condições de pagamento para códigos de pagamento da ScannTech
         condicoes_pagamento = {
             "K": 10,
             "B": 9,
@@ -360,7 +447,8 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
             "C": 11,
             "O": 9,
         }
-
+        
+        # Criação do objeto de resposta
         responseScannTech = schemas.ModelScannTech(
             fecha=data_criacao,
             total=round(total_faturamento, 2),

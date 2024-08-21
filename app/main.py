@@ -12,6 +12,16 @@ app = FastAPI()
 
 # Dependency
 def get_db():
+    """
+    Retorna uma instância do banco de dados.
+
+    Retorna uma instância do banco de dados que pode ser usada para realizar operações de leitura e escrita.
+    Certifica-se de fechar a conexão com o banco de dados quando a função é concluída ou ocorre uma exceção.
+
+    Returns:
+        db: Uma instância do banco de dados.
+
+    """
     db = SessionLocal()
     try:
         yield db

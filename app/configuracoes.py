@@ -26,6 +26,16 @@ filiais = ["0101", "0102", "0103", "0104", "0105", "0106", "0107"]
 
 
 def converte_base64(usuario, senha):
+    """
+    Converte as credenciais de usuário e senha em uma string codificada em base64.
+
+    Args:
+        usuario (str): O nome de usuário.
+        senha (str): A senha do usuário.
+
+    Returns:
+        str: A string codificada em base64 no formato "Basic {encoded_credentials}".
+    """
     credentials = f"{usuario}:{senha}".encode("ascii")
     encoded_credentials = base64.b64encode(credentials).decode("ascii")
     return f"Basic {encoded_credentials}"
@@ -39,6 +49,19 @@ headers = {
 }
 
 def limpar_arquivos_antigos(diretorio, dias):
+    """
+    Remove arquivos antigos de um diretório.
+
+    Args:
+        diretorio (str): O caminho para o diretório onde os arquivos serão verificados e removidos.
+        dias (int): O número de dias a partir dos quais os arquivos serão considerados antigos.
+
+    Returns:
+        None
+
+    Raises:
+        None
+    """
     agora = time.time()
     periodo = dias * 86400  # Convertendo dias para segundos
 

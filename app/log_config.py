@@ -15,18 +15,18 @@ def setup_logger():
         log_directory, 60
     )  # 30 dias, você pode ajustar conforme necessário
 
-    # Logger setup
+    # Configuração do logger
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
 
-    # Check if logger already has a handler
+    # Verifica se o logger já possui um handler
     if not logger.handlers:
-        # Timed rotating file handler for daily log files
+        # Timed rotating file handler para arquivos de log diários
         file_handler = TimedRotatingFileHandler(
             filename=os.path.join(log_directory, "app.log"),
             when="midnight",
             interval=1,
-            backupCount=30,  # Keep logs for the last 30 days
+            backupCount=30,  # Manter logs dos últimos 30 dias
         )
         file_handler.suffix = "%Y-%m-%d"
         file_formatter = logging.Formatter(

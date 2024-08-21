@@ -33,6 +33,16 @@ else:
 
 @router.get("/enviar/faturamento")
 async def enviar_faturamento():
+    """
+    Função assíncrona responsável por enviar o faturamento.
+
+    Returns:
+        enviar (objeto): Objeto contendo informações sobre o envio do faturamento.
+
+    Raises:
+        HTTPException: Exceção lançada caso ocorra um erro ao enviar o faturamento.
+
+    """
     try:
         enviar = scriptSend.tarefa_periodica_envio_faturamento(filial=filiais)
         logger.info("Faturamento enviado")
@@ -40,10 +50,31 @@ async def enviar_faturamento():
     except Exception as e:
         logger.error(f"Erro ao enviar faturamento: {e}")
         raise HTTPException(status_code=500, detail=f"Erro ao enviar faturamento: {e}")
-    
+
 
 @router.get("/enviar/fechamento")
 async def enviar_fechamento():
+    """
+    Endpoint para enviar o fechamento.
+
+    Este endpoint é responsável por enviar o fechamento para uma determinada filial.
+    Ele chama a função `tarefa_periodica_envio_fechamento` do módulo `scriptSend` passando a filial como parâmetro.
+    Em caso de sucesso, o endpoint retorna o resultado do envio.
+    Em caso de erro, o endpoint registra o erro no log e retorna uma resposta de erro com código 500.
+
+    Parâmetros:
+        Nenhum.
+
+    Retorno:
+        O resultado do envio do fechamento.
+
+    Exceções:
+        - `HTTPException`: Caso ocorra um erro ao enviar o fechamento.
+
+    Exemplo de uso:
+        GET /enviar/fechamento
+
+    """
     try:
         enviar = scriptSend.tarefa_periodica_envio_fechamento(filial=filiais)
         logger.info("Fechamento enviado")
@@ -55,6 +86,17 @@ async def enviar_fechamento():
 
 @router.get("/verificar/reenvio")
 async def verificar_reenvio():
+    """
+    Verifica se há necessidade de reenvio de envios.
+
+    Retorna o resultado da verificação.
+
+    Raises:
+        HTTPException: Se ocorrer um erro ao verificar o reenvio.
+
+    Returns:
+        O resultado da verificação.
+    """
     try:
         verificar = scriptSend.verificar_reenvio(filial=filiais)
         logger.info("Reenvio verificado")
@@ -66,21 +108,50 @@ async def verificar_reenvio():
 
 @router.get("/verificar/cancelamentos")
 async def verificar_cancelamentos():
+    """
+    Verifica cancelamentos.
+
+    Verifica os cancelamentos de envios periodicamente. Retorna o resultado da verificação.
+
+    Raises:
+        HTTPException: Se ocorrer um erro ao verificar os cancelamentos.
+
+    Returns:
+        O resultado da verificação dos cancelamentos.
+    """
     try:
-        verificar = scriptSend.tarefa_periodica_verificacao_cancelamentos(filial=filiais)
+        verificar = scriptSend.tarefa_periodica_verificacao_cancelamentos(
+            filial=filiais
+        )
         logger.info("Cancelamentos verificados")
         return verificar
     except Exception as e:
         logger.error(f"Erro ao verificar cancelamentos: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro ao verificar cancelamentos: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Erro ao verificar cancelamentos: {e}"
+        )
 
 
 @router.get("/verificar/devolucoes")
 async def verificar_devolucoes():
+    """
+    Verifica as devoluções.
+
+    Verifica as devoluções através da execução da função `tarefa_periodica_verificacao_devolucoes` do script `scriptSend`.
+    Caso ocorra algum erro durante a verificação, uma exceção `HTTPException` será levantada com o status code 500 e uma mensagem de detalhe informando o erro.
+
+    Returns:
+        O resultado da verificação das devoluções.
+
+    Raises:
+        HTTPException: Caso ocorra algum erro durante a verificação das devoluções.
+    """
     try:
         verificar = scriptSend.tarefa_periodica_verificacao_devolucoes(filial=filiais)
         logger.info("Devoluções verificadas")
         return verificar
     except Exception as e:
         logger.error(f"Erro ao verificar devoluções: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro ao verificar devoluções: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Erro ao verificar devoluções: {e}"
+        )

@@ -33,6 +33,41 @@ def enviar_faturamento_para_api_externa(
     agrupar_outros_flag: bool = agrupar_outros_flag,
     filial: str = None,
 ):
+    """
+    Envia dados de faturamento para uma API externa.
+
+    Parâmetros:
+    - db (Session): Sessão do banco de dados para realizar operações de leitura e gravação.
+    - data_inicial (str, opcional): Data inicial para filtrar os faturamentos. Se não fornecida, usa a data atual.
+    - data_final (str, opcional): Data final para filtrar os faturamentos. Se não fornecida, usa a data atual.
+    - agrupar_outros_flag (bool): Flag para determinar se outros itens devem ser agrupados.
+    - filial (str, opcional): Código da filial para filtrar os faturamentos.
+
+    Retorna:
+    - List[ModelScannTech]: Lista de objetos de faturamento enviados.
+
+    Descrição:
+    Esta função recupera os dados de faturamento de acordo com o período especificado e, em seguida,
+    envia esses dados para uma API externa. A função também realiza o registro do envio no banco de dados
+    e trata possíveis erros durante o processo de envio.
+
+    Passos:
+    1. Recupera os dados de faturamento para as datas fornecidas ou para a data atual se as datas não forem especificadas.
+    2. Converte os dados de faturamento em formato JSON.
+    3. Tenta registrar o envio no banco de dados local. Se falhar, faz o rollback e termina a função.
+    4. Tenta enviar os dados de faturamento para a API externa.
+    5. Se o envio for bem-sucedido, atualiza o registro no banco de dados com informações adicionais como idLote e data de envio.
+    6. Caso ocorram erros HTTP ou de conexão, os erros são logados e impressos.
+    7. Retorna a lista de faturamentos enviados.
+
+    Exceções tratadas:
+    - `requests.exceptions.HTTPError`: Erros relacionados a respostas HTTP.
+    - `requests.exceptions.RequestException`: Erros gerais de requisições HTTP.
+    - `Exception`: Erros gerais ao salvar o envio no banco de dados.
+
+    Logs:
+    - A função registra logs de sucesso e falhas, incluindo detalhes como status code e conteúdo JSON enviado.
+    """
     current_date = datetime.now().strftime("%d/%m/%Y")
 
     # Get the faturamentos for the current date
@@ -108,28 +143,41 @@ def enviar_fechamento_diario(
     agrupar_outros_flag: bool = agrupar_outros_flag,
     filial: str = None,
 ):
+    """
+    Envia os dados de fechamento diário para uma API externa.
+
+    Parâmetros:
+    - db (Session): Sessão do banco de dados para realizar operações de leitura.
+    - data_inicial (str, opcional): Data inicial para filtrar o fechamento. Se não fornecida, usa a data atual.
+    - data_final (str, opcional): Data final para filtrar o fechamento. Se não fornecida, usa a data atual.
+    - agrupar_outros_flag (bool): Flag para determinar se outros itens devem ser agrupados.
+    - filial (str, opcional): Código da filial para filtrar o fechamento.
+
+    Retorna:
+    - Fechamento: Objeto de fechamento diário enviado.
+
+    Descrição:
+    Esta função recupera os dados de fechamento diário de acordo com o período especificado e os envia para uma API externa.
+    O fechamento é recuperado a partir da base de dados e enviado para uma API que processa o fechamento diário. A função também
+    realiza tratamento de erros relacionados ao envio e registro de logs.
+
+    Passos:
+    1. Recupera os dados de fechamento diário para as datas fornecidas ou para a data atual se as datas não forem especificadas.
+    2. Monta a URL da API externa utilizando informações de filial e caixa.
+    3. Tenta enviar os dados de fechamento para a API externa.
+    4. Se o envio for bem-sucedido, loga as informações de sucesso, incluindo o status code e o conteúdo do fechamento.
+    5. Caso ocorram erros HTTP ou de conexão, os erros são logados e impressos.
+    6. Retorna o objeto de fechamento enviado.
+
+    Exceções tratadas:
+    - `requests.exceptions.HTTPError`: Erros relacionados a respostas HTTP.
+    - `requests.exceptions.RequestException`: Erros gerais de requisições HTTP.
+
+    Logs:
+    - A função registra logs de sucesso e falhas, incluindo detalhes como status code e o conteúdo do fechamento.
+    """
     current_date = datetime.now().strftime("%d/%m/%Y")
 
-    # # Get the faturamentos for the current date
-    # faturamentos: List[ModelScannTech] = get_faturamento_per_date(
-    #     db,
-    #     (data_inicial if data_inicial else current_date),
-    #     (data_final if data_final else current_date),
-    #     agrupar_outros=agrupar_outros_flag,
-    # )
-    # fechamento_data = faturamentos[0].fecha
-    # total_vendas = sum([f.total for f in faturamentos])
-    # # total_cancelamentos = sum([f. for f in faturamentos])
-    # qtd_vendas = len(faturamentos)
-    # qtd_cancelamentos = len([f for f in faturamentos if f.cancelacion])
-
-    # fechamento: Fechamento = Fechamento(
-    #     fechaVentas=fechamento_data,
-    #     montoVentaLiquida=total_vendas,
-    #     montoCancelaciones=0.0,
-    #     cantidadMovimientos=qtd_vendas,
-    #     cantidadCancelaciones=qtd_cancelamentos,
-    # )
     fechamento: Fechamento = get_fechamento_per_date(
         db,
         (data_inicial if data_inicial else current_date),
@@ -171,6 +219,44 @@ def enviar_fechamento_diario(
 def get_solicitacoes_reenvio(
     filial: str = None,
 ):
+    """
+    Obtém solicitações de reenvio de uma API externa.
+
+    Parâmetros:
+    - filial (str, opcional): Código da filial para filtrar as solicitações de reenvio.
+
+    Retorna:
+    - List[Solicitacoes]: Lista de objetos de solicitações de reenvio obtidos da API externa.
+
+    Descrição:
+    Esta função faz uma requisição GET a uma API externa para obter uma lista de solicitações de reenvio.
+    As solicitações são filtradas pelo código da filial, se fornecido. A função trata erros HTTP durante a
+    requisição e registra logs informando o sucesso ou falha da operação.
+
+    Passos:
+    1. Constrói a URL da API externa usando o código da filial fornecido.
+    2. Faz uma requisição GET à API externa para obter as solicitações de reenvio.
+    3. Converte a resposta JSON da API em uma lista de objetos `Solicitacoes`.
+    4. Registra logs e imprime o número de solicitações obtidas e os detalhes dessas solicitações.
+    5. Em caso de erro HTTP, registra os detalhes do erro e imprime as informações relevantes.
+    6. Retorna a lista de solicitações obtidas, mesmo que vazia se ocorrer algum erro.
+
+    Exceções tratadas:
+    - `requests.exceptions.HTTPError`: Erros relacionados a respostas HTTP, incluindo status code e detalhes do erro.
+
+    Logs:
+    - A função registra logs do sucesso na obtenção das solicitações, incluindo o número de solicitações obtidas.
+    - Em caso de erro, os logs incluem o status code e detalhes do erro retornado pela API.
+
+    Exemplo de Uso:
+    ```
+    solicitacoes = get_solicitacoes_reenvio(filial="001")
+    if solicitacoes:
+        # Processa as solicitações de reenvio
+    else:
+        # Trata a ausência de solicitações
+    ```
+    """
     lista_solicitacoes: Solicitacoes = []
 
     try:
@@ -209,6 +295,52 @@ def verificar_cancelamentos_enviar(
     db: Session,
     filial: str = None,
 ):
+    """
+    Verifica cancelamentos de notas fiscais e envia um fechamento diário para uma API externa.
+
+    Parâmetros:
+    - db (Session): Sessão do banco de dados utilizada para realizar consultas e operações.
+    - filial (str, opcional): Código da filial para filtrar os envios e cancelamentos.
+
+    Retorna:
+    - Fechamento: Objeto de fechamento de cancelamentos enviado.
+
+    Descrição:
+    Esta função realiza a verificação de notas fiscais enviadas e seus cancelamentos no período determinado,
+    e em seguida, envia um fechamento diário de cancelamentos para uma API externa. A função lida com a
+    extração, validação e envio dos dados, além de registrar logs e tratar possíveis erros durante o processo.
+
+    Passos:
+    1. Define o período de data para a verificação de envios e cancelamentos.
+    2. Consulta no banco de dados os envios que ocorreram dentro do período e aqueles que não possuem registro
+       de devolução/cancelamento.
+    3. Filtra e agrupa as notas fiscais enviadas, separando aquelas que foram canceladas.
+    4. Cria um objeto de fechamento (`Fechamento`) com as informações agregadas de cancelamentos.
+    5. Tenta salvar um novo registro de envio no banco de dados, identificando-o como uma devolução/cancelamento.
+    6. Envia o fechamento de cancelamentos para a API externa.
+    7. Se o envio for bem-sucedido, atualiza o registro no banco de dados com informações como conteúdo do envio,
+       data de envio e notas fiscais associadas.
+    8. Em caso de erro HTTP ou de conexão, os erros são logados e impressos.
+    9. Retorna o objeto de fechamento enviado.
+
+    Exceções tratadas:
+    - `requests.exceptions.HTTPError`: Erros relacionados a respostas HTTP, incluindo status code e detalhes do erro.
+    - `requests.exceptions.RequestException`: Erros gerais de conexão e requisições HTTP.
+    - `Exception`: Erros gerais durante a consulta e manipulação dos dados no banco de dados.
+
+    Logs:
+    - A função registra logs detalhados sobre o sucesso ou falha na obtenção, processamento e envio de cancelamentos,
+      incluindo status code, detalhes da resposta da API e o conteúdo do fechamento.
+
+    Exemplo de Uso:
+    ```
+    fechamento = verificar_cancelamentos_enviar(db=session, filial="001")
+    if fechamento:
+        # Processa o fechamento retornado
+    else:
+        # Trata a ausência de cancelamentos
+    ```
+    """
     data_atual = datetime.now().date()
     data_inicial = data_atual - timedelta(days=1) if data_atual.day == 1 else data_atual
     data_final = datetime.now().date()
@@ -341,7 +473,48 @@ def verificar_devolucoes(
     db: Session,
     filial: str = None,
 ):
+    """
+    Verifica devoluções de notas fiscais em um período específico e envia um fechamento diário para uma API externa.
 
+    Parâmetros:
+    - db (Session): Sessão do banco de dados utilizada para realizar consultas e operações.
+    - filial (str, opcional): Código da filial para filtrar os envios de devoluções.
+
+    Retorna:
+    - Fechamento: Objeto de fechamento de devoluções enviado.
+
+    Descrição:
+    Esta função verifica as devoluções de notas fiscais ocorridas em um período específico,
+    cria um objeto de fechamento com os dados agregados dessas devoluções e envia as informações para uma API externa.
+
+    Passos:
+    1. Define o período de data para a verificação de devoluções.
+    2. Consulta no banco de dados todas as devoluções (`ItemFaturamento`) que ocorreram no período definido e que não foram canceladas.
+    3. Cria um objeto de fechamento (`Fechamento`) e agrega as informações das devoluções, como valores e quantidade de devoluções.
+    4. Tenta salvar um novo registro de envio no banco de dados, identificando-o como uma devolução/cancelamento.
+    5. Envia o fechamento de devoluções para a API externa.
+    6. Se o envio for bem-sucedido, atualiza o registro no banco de dados com informações como o conteúdo do envio, data de envio e notas fiscais associadas.
+    7. Em caso de erro HTTP ou de conexão, os erros são logados e impressos.
+    8. Retorna o objeto de fechamento enviado.
+
+    Exceções tratadas:
+    - `requests.exceptions.HTTPError`: Erros relacionados a respostas HTTP, incluindo status code e detalhes do erro.
+    - `requests.exceptions.RequestException`: Erros gerais de conexão e requisições HTTP.
+    - `Exception`: Erros gerais durante a consulta e manipulação dos dados no banco de dados.
+
+    Logs:
+    - A função registra logs detalhados sobre o sucesso ou falha na obtenção, processamento e envio de devoluções,
+      incluindo status code, detalhes da resposta da API e o conteúdo do fechamento.
+
+    Exemplo de Uso:
+    ```
+    fechamento_devolucoes = verificar_devolucoes(db=session, filial="001")
+    if fechamento_devolucoes:
+        # Processa o fechamento de devoluções retornado
+    else:
+        # Trata a ausência de devoluções
+    ```
+    """
     data_atual = datetime.now().date()
     data_inicial = data_atual - timedelta(days=1) if data_atual.day == 1 else data_atual
     data_final = datetime.now().date()
