@@ -232,29 +232,31 @@ def generate_csv_and_xlsx(
     data_list = []
     # Transform the data into a list of dictionaries
     for faturamento in faturamentos:
-        data_list.append(
-            {
-                "data": faturamento.fecha,
-                "total": faturamento.total,
-                "numero_nf": faturamento.numero,
-                "desconto_total": faturamento.descuentoTotal,
-                "acrescimos_total": faturamento.recargoTotal,
-                "cancelada": faturamento.cancelacion,
-                "idCliente": faturamento.idCliente,
-                "documentoCliente": faturamento.documentoCliente,
-                "canal_venda": faturamento.codigoCanalVenta,
-                "descricao_canal_venda": faturamento.descripcionCanalVenta,
-                "forma_pagamento": faturamento.pagos[0].codigoTipoPago,
-                "valor_pagamento": faturamento.pagos[0].importe,
-                "codigoBarras": faturamento.detalles[0].codigoBarras,
-                "codigoSAP": faturamento.detalles[0].codigoArticulo,
-                "descricao_produto": faturamento.detalles[0].descripcionArticulo,
-                "quantidade": faturamento.detalles[0].cantidad,
-                "valorUnitario": faturamento.detalles[0].importeUnitario,
-                "desconto": faturamento.detalles[0].descuento,
-                "acrescimo_item": faturamento.detalles[0].recargo,
-            }
-        )
+        for pago in faturamento.pagos:
+            for detalle in faturamento.detalles:
+                data_list.append(
+                    {
+                        "data": faturamento.fecha,
+                        "total": faturamento.total,
+                        "numero_nf": faturamento.numero,
+                        "desconto_total": faturamento.descuentoTotal,
+                        "acrescimos_total": faturamento.recargoTotal,
+                        "cancelada": faturamento.cancelacion,
+                        "idCliente": faturamento.idCliente,
+                        "documentoCliente": faturamento.documentoCliente,
+                        "canal_venda": faturamento.codigoCanalVenta,
+                        "descricao_canal_venda": faturamento.descripcionCanalVenta,
+                        "forma_pagamento": pago.codigoTipoPago,
+                        "valor_pagamento": pago.importe,
+                        "codigoBarras": detalle.codigoBarras,
+                        "codigoSAP": detalle.codigoArticulo,
+                        "descricao_produto": detalle.descripcionArticulo,
+                        "quantidade": detalle.cantidad,
+                        "valorUnitario": detalle.importeUnitario,
+                        "desconto": detalle.descuento,
+                        "acrescimo_item": detalle.recargo,
+                    }
+                )
 
     # Create a DataFrame from the list of dictionaries
     df = pd.DataFrame(data_list)
@@ -326,150 +328,152 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
     for faturamento in faturamentos:
         faturamento: models.ItemFaturamento
         grouped[faturamento.NUMERO_NOTA].append(faturamento)
-        total_faturamento = faturamento.TOTAL_BRUTO
+        # total_faturamento = faturamento.TOTAL_BRUTO
 
     # Construir resposta agregada
     aggregated = []
     for numero_nota, items in grouped.items():
-        items: List[schemas.ItemFaturamentoInDB]
-        total_faturamento = 0
-        for item in items:
-            total_faturamento += item.TOTAL_BRUTO
-        cliente = (
-            db.query(clientes_models.Cliente)
-            .filter(clientes_models.Cliente.ID == items[0].CLIENTE_ID)
-            .first()
-        )
-        clienteSchema = clientes_schemas.Cliente.model_validate(cliente)
-        clienteSchema.IDCLIENTE = set_idCliente(clienteSchema.IDCLIENTE, clienteSchema)
-        hora_formatada = f"{items[0].HORA_CRIADA[:2]}:{items[0].HORA_CRIADA[2:4]}:{items[0].HORA_CRIADA[4:]}"
-        data_criacao = (
-            f"{items[0].DATA_CRIADA.strftime('%Y-%m-%d')}T{hora_formatada}.000-0300"
-        )
-        desconto_total = round(
-            sum(abs(item.DESCONTO_ABSOLUTO) or 0 for item in items), 2
-        )
-        cancelada = True if items[0].CANCELADA else False
-        forma_pagamento = items[0].FORMA_PAGAMENTO
-        cond_descricao = items[0].COND_DESCRICAO
+        # verificar se um dos itens é do grupo permitido
+        if any(item.GRUPO in grupos_permitidos for item in items):
+            items: List[schemas.ItemFaturamentoInDB]
+            total_faturamento = 0
+            for item in items:
+                total_faturamento += item.TOTAL_BRUTO
+            cliente = (
+                db.query(clientes_models.Cliente)
+                .filter(clientes_models.Cliente.ID == items[0].CLIENTE_ID)
+                .first()
+            )
+            clienteSchema = clientes_schemas.Cliente.model_validate(cliente)
+            clienteSchema.IDCLIENTE = set_idCliente(clienteSchema.IDCLIENTE, clienteSchema)
+            hora_formatada = f"{items[0].HORA_CRIADA[:2]}:{items[0].HORA_CRIADA[2:4]}:{items[0].HORA_CRIADA[4:]}"
+            data_criacao = (
+                f"{items[0].DATA_CRIADA.strftime('%Y-%m-%d')}T{hora_formatada}.000-0300"
+            )
+            desconto_total = round(
+                sum(abs(item.DESCONTO_ABSOLUTO) or 0 for item in items), 2
+            )
+            cancelada = True if items[0].CANCELADA else False
+            forma_pagamento = items[0].FORMA_PAGAMENTO
+            cond_descricao = items[0].COND_DESCRICAO
 
-        itens_modificados: List[schemas.Detalles] = []
-        item_agregado: schemas.Detalles = None
-        for item in items:
-            try:
-                itemDetalhes: schemas.Detalles = schemas.Detalles(
-                    codigoArticulo=item.CODIGO_MATERIAL,
-                    codigoBarras=item.CODIGO_MATERIAL,
-                    descripcionArticulo=item.DESC_MATERIAL,
-                    cantidad=item.QUANTIDADE,
-                    # Cálculo do importe unitário, incluindo o ICMS ST e o adicional de 1.3% para pneus importados
-                    importeUnitario=item.VLR_UNITARIO
-                    + (
-                        (
-                            (item.ICMS_ST / item.QUANTIDADE)
-                            if (item.QUANTIDADE and item.ICMS_ST)
-                            else 0
-                        )
+            itens_modificados: List[schemas.Detalles] = []
+            item_agregado: schemas.Detalles = None
+            for item in items:
+                try:
+                    itemDetalhes: schemas.Detalles = schemas.Detalles(
+                        codigoArticulo=item.CODIGO_MATERIAL,
+                        codigoBarras=item.CODIGO_MATERIAL,
+                        descripcionArticulo=item.DESC_MATERIAL,
+                        cantidad=item.QUANTIDADE,
+                        # Cálculo do importe unitário, incluindo o ICMS ST e o adicional de 1.3% para pneus importados
+                        importeUnitario=item.VLR_UNITARIO
                         + (
                             (
+                                (item.ICMS_ST / item.QUANTIDADE)
+                                if (item.QUANTIDADE and item.ICMS_ST)
+                                else 0
+                            )
+                            + (
                                 (
-                                    (item.ICMS_ST / item.QUANTIDADE)
-                                    if (item.QUANTIDADE and item.ICMS_ST)
-                                    else 0
+                                    (
+                                        (item.ICMS_ST / item.QUANTIDADE)
+                                        if (item.QUANTIDADE and item.ICMS_ST)
+                                        else 0
+                                    )
+                                    * 1.3
+                                    / 100
                                 )
-                                * 1.3
-                                / 100
+                                if item.GRUPO_MERC == "4153"
+                                else 0
                             )
-                            if item.GRUPO_MERC == "4153"
-                            else 0
-                        )
-                    ),
-                    # Cálculo do importe total, incluindo o ICMS ST e o adicional de 1.3% para pneus importados
-                    importe=(
-                        item.TOTAL_BRUTO
-                        + (item.ICMS_ST or 0)
-                        + (
-                            ((item.TOTAL_BRUTO + (item.ICMS_ST or 0)) * 1.3 / 100)
-                            if item.GRUPO_MERC == "4153"
-                            else 0
-                        )
-                    ),
-                    descuento=round(abs(item.DESCONTO_ABSOLUTO), 2),
-                    recargo=0.0,
-                )
-                # if item.GRUPO_MERC == "4153":
-                #     itemDetalhes.importe += itemDetalhes.importe * 1.3 / 100
-                if item.GRUPO not in grupos_permitidos:
-                    if agrupar_outros:
-                        if item_agregado is None:
-                            item_agregado = deepcopy(itemDetalhes)
-                            item_agregado.descripcionArticulo = "Outros"
-                            item_agregado.codigoArticulo = "0"
-                            item_agregado.codigoBarras = None
-                            item_agregado.cantidad = 1
+                        ),
+                        # Cálculo do importe total, incluindo o ICMS ST e o adicional de 1.3% para pneus importados
+                        importe=(
+                            item.TOTAL_BRUTO
+                            + (item.ICMS_ST or 0)
+                            + (
+                                ((item.TOTAL_BRUTO + (item.ICMS_ST or 0)) * 1.3 / 100)
+                                if item.GRUPO_MERC == "4153"
+                                else 0
+                            )
+                        ),
+                        descuento=round(abs(item.DESCONTO_ABSOLUTO), 2),
+                        recargo=0.0,
+                    )
+                    # if item.GRUPO_MERC == "4153":
+                    #     itemDetalhes.importe += itemDetalhes.importe * 1.3 / 100
+                    if item.GRUPO not in grupos_permitidos:
+                        if agrupar_outros:
+                            if item_agregado is None:
+                                item_agregado = deepcopy(itemDetalhes)
+                                item_agregado.descripcionArticulo = "Outros"
+                                item_agregado.codigoArticulo = "0"
+                                item_agregado.codigoBarras = None
+                                item_agregado.cantidad = 1
+                            else:
+                                item_agregado.importeUnitario += (
+                                    itemDetalhes.importeUnitario
+                                )
+                                item_agregado.importe += itemDetalhes.importe
+                                item_agregado.descuento += itemDetalhes.descuento
                         else:
-                            item_agregado.importeUnitario += (
-                                itemDetalhes.importeUnitario
-                            )
-                            item_agregado.importe += itemDetalhes.importe
-                            item_agregado.descuento += itemDetalhes.descuento
+                            itens_modificados.append(itemDetalhes)
                     else:
                         itens_modificados.append(itemDetalhes)
-                else:
-                    itens_modificados.append(itemDetalhes)
-            except Exception as e:
-                print(e)
+                except Exception as e:
+                    print(e)
 
-        if item_agregado is not None:
-            # Ajuste do importe unitário para arredondar duas casas e adicionar o desconto
-            item_agregado.importeUnitario = (
-                round(item_agregado.importe, 2) + item_agregado.descuento
-            )
-            item_agregado.descuento = round(item_agregado.descuento, 2)
-            item_agregado.importe = round(item_agregado.importe, 2)
-            itens_modificados.append(item_agregado)
-        
-        # Mapeamento de condições de pagamento para códigos de pagamento da ScannTech
-        condicoes_pagamento = {
-            "K": 10,
-            "B": 9,
-            "D": 9,
-            "E": 13 if "CIELO DEBITO" in cond_descricao else 9,
-            "G": 11,
-            "L": 9,
-            "A": 0,
-            "R": 9,
-            "V": 0,
-            "H": 12 if "TICKET" in cond_descricao else 9,
-            "F": 9,
-            "N": 11,
-            "U": 9,
-            "C": 11,
-            "O": 9,
-        }
-        
-        # Criação do objeto de resposta
-        responseScannTech = schemas.ModelScannTech(
-            fecha=data_criacao,
-            total=round(total_faturamento, 2),
-            numero=numero_nota,
-            descuentoTotal=abs(desconto_total),
-            recargoTotal=0,
-            cancelacion=cancelada,
-            idCliente=clienteSchema.IDCLIENTE,
-            documentoCliente=None,
-            codigoCanalVenta=1,
-            descripcionCanalVenta="VENDA NA LOJA",
-            detalles=itens_modificados,
-            pagos=[
-                schemas.Pagos(
-                    importe=round(total_faturamento, 2),
-                    codigoTipoPago=condicoes_pagamento.get(forma_pagamento, 0),
-                    documentoCliente=None,
+            if item_agregado is not None:
+                # Ajuste do importe unitário para arredondar duas casas e adicionar o desconto
+                item_agregado.importeUnitario = (
+                    round(item_agregado.importe, 2) + item_agregado.descuento
                 )
-            ],
-        )
+                item_agregado.descuento = round(item_agregado.descuento, 2)
+                item_agregado.importe = round(item_agregado.importe, 2)
+                itens_modificados.append(item_agregado)
+            
+            # Mapeamento de condições de pagamento para códigos de pagamento da ScannTech
+            condicoes_pagamento = {
+                "K": 10,
+                "B": 9,
+                "D": 9,
+                "E": 13 if "CIELO DEBITO" in cond_descricao else 9,
+                "G": 11,
+                "L": 9,
+                "A": 0,
+                "R": 9,
+                "V": 0,
+                "H": 12 if "TICKET" in cond_descricao else 9,
+                "F": 9,
+                "N": 11,
+                "U": 9,
+                "C": 11,
+                "O": 9,
+            }
+            
+            # Criação do objeto de resposta
+            responseScannTech = schemas.ModelScannTech(
+                fecha=data_criacao,
+                total=round(total_faturamento, 2),
+                numero=numero_nota,
+                descuentoTotal=abs(desconto_total),
+                recargoTotal=0,
+                cancelacion=cancelada,
+                idCliente=clienteSchema.IDCLIENTE,
+                documentoCliente=None,
+                codigoCanalVenta=1,
+                descripcionCanalVenta="VENDA NA LOJA",
+                detalles=itens_modificados,
+                pagos=[
+                    schemas.Pagos(
+                        importe=round(total_faturamento, 2),
+                        codigoTipoPago=condicoes_pagamento.get(forma_pagamento, 0),
+                        documentoCliente=None,
+                    )
+                ],
+            )
 
-        aggregated.append(responseScannTech)
+            aggregated.append(responseScannTech)
 
     return aggregated
