@@ -98,6 +98,67 @@ class ItemFaturamento(Base):
     PORCENTAGEM_COMISSAO_COLETADOR = Column(Float)
     VALOR_BASE_COMISSAO = Column(Float)
     HORA_CRIADA = Column(String)
+    
+
+class Materiais(Base):
+    __tablename__ = "hanasync_faturamento_materiais"
+
+    ID = Column(String, primary_key=True, index=True)
+    CODIGO_MATERIAL = Column(String)
+    COD_FAB = Column(String)
+    DESC_MATERIAL = Column(String)
+    CLASSIFICACAO = Column(String)
+    SEGMENTO = Column(String)
+    FAMILIA = Column(String)
+    GRUPO = Column(String)
+    GRUPO_MERC = Column(String)
+    GRUPO_MERC_DESC = Column(String)
+    UNIDADE = Column(String)
+    ESTADO = Column(String)
+    CIDADE = Column(String)
+    VENDEDOR_TIPO = Column(String)
+    VENDEDOR_ID = Column(Integer)
+    VENDEDOR = Column(String)
+    MECANICOZ4 = Column(String)
+    MECANICOZ5 = Column(String)
+    MECANICOZ6 = Column(String)
+    MECANICOZ7 = Column(String)
+    MECANICOZ8 = Column(String)
+    PLACA = Column(String)
+    KM = Column(String)
+    CREDAT = Column(String)
+    OV_TIPO = Column(String)
+    BP_TIPO = Column(String)
+    CRIADO_POR = Column(String)
+    PRECO_VAREJO = Column(Float)
+    PRECO_ATACADO = Column(Float)
+    JUROS_CONDICAO = Column(Float)
+    TIPO_ORDEM = Column(String)
+    COMISSAO_TIPO = Column(String)
+    COMISSAO_PORCENTAGEM = Column(Float)
+    ITEM = Column(String)
+    COLETADOR = Column(String)
+    MOTIVO_ORDEM = Column(String)
+    CENTRO_REG = Column(String)
+    COLETADOR_NOME = Column(String)
+    COLETADOR_NOME_COMPLETO = Column(String)
+    SEGMENTO_PRINCIPAL_BP = Column(String)
+    REGIAO_AGRO_BP = Column(String)
+    VENDEDOR_OV_MAE_ID = Column(Integer)
+    VENDEDOR_OV_MAE_NOME = Column(String)
+    TIPO_COMISSAO = Column(String)
+    AJUSTES_COMISSAO = Column(String)
+    PORCENTAGEM_COMISSAO_VENDEDOR = Column(Float)
+    PORCENTAGEM_COMISSAO_COLETADOR = Column(Float)
+    VALOR_BASE_COMISSAO = Column(Float)
+    HORA_CRIADA = Column(String)
+    
+
+class MateriaisNovo(Base):
+    __tablename__ = "hanasync_materiais"
+    ID = Column(Integer, primary_key=True, index=True)
+    COD_SAP = Column(String)
+    BARCODE = Column(String)
 
 
 class Envios(Base):

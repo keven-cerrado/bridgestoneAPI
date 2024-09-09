@@ -196,6 +196,29 @@ def get_fechamento_per_date(
         return None
 
 
+def get_barcode_by_codigoMaterial(db: Session, lista_codigo_material: List[str]):
+    """
+    Obtém o código de barras de um material a partir do código SAP.
+
+    Args:
+        db (Session): Objeto de sessão do banco de dados.
+        lista_codigo_material (List[str]): Lista de códigos SAP dos materiais.
+
+    Returns:
+        Dict[str, str]: Dicionário contendo o código SAP e o código de barras correspondente.
+    """
+    try:
+        materiais = (
+            db.query(models.MateriaisNovo)
+            .filter(models.MateriaisNovo.COD_SAP.in_(lista_codigo_material))
+            .all()
+        )
+        return {m.COD_SAP: m.BARCODE for m in materiais}
+    except Exception as e:
+        print(e)
+        return None
+
+
 def set_idCliente(v, values: clientes_schemas.Cliente):
     def set_idCliente(v, values: clientes_schemas.Cliente) -> str:
         """
@@ -305,6 +328,9 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
     Examples:
         aggregate_by_numero_nota(db, faturamentos)
     """
+    # Lista de todos os "CODIGO_MATERIAL" dos materiais da query
+    materiais = [str(f.CODIGO_MATERIAL).lstrip("0") for f in faturamentos]
+    materiais_barcode = get_barcode_by_codigoMaterial(db, materiais)
     grouped = defaultdict(list)
 
     # Listas de família e grupos permitidos
@@ -345,7 +371,9 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
                 .first()
             )
             clienteSchema = clientes_schemas.Cliente.model_validate(cliente)
-            clienteSchema.IDCLIENTE = set_idCliente(clienteSchema.IDCLIENTE, clienteSchema)
+            clienteSchema.IDCLIENTE = set_idCliente(
+                clienteSchema.IDCLIENTE, clienteSchema
+            )
             hora_formatada = f"{items[0].HORA_CRIADA[:2]}:{items[0].HORA_CRIADA[2:4]}:{items[0].HORA_CRIADA[4:]}"
             data_criacao = (
                 f"{items[0].DATA_CRIADA.strftime('%Y-%m-%d')}T{hora_formatada}.000-0300"
@@ -363,7 +391,9 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
                 try:
                     itemDetalhes: schemas.Detalles = schemas.Detalles(
                         codigoArticulo=item.CODIGO_MATERIAL,
-                        codigoBarras=item.CODIGO_MATERIAL,
+                        codigoBarras=materiais_barcode.get(
+                            str(item.CODIGO_MATERIAL).lstrip("0")
+                        ),
                         descripcionArticulo=item.DESC_MATERIAL,
                         cantidad=item.QUANTIDADE,
                         # Cálculo do importe unitário, incluindo o ICMS ST e o adicional de 1.3% para pneus importados
@@ -432,7 +462,7 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
                 item_agregado.descuento = round(item_agregado.descuento, 2)
                 item_agregado.importe = round(item_agregado.importe, 2)
                 itens_modificados.append(item_agregado)
-            
+
             # Mapeamento de condições de pagamento para códigos de pagamento da ScannTech
             condicoes_pagamento = {
                 "K": 10,
@@ -451,7 +481,7 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
                 "C": 11,
                 "O": 9,
             }
-            
+
             # Criação do objeto de resposta
             responseScannTech = schemas.ModelScannTech(
                 fecha=data_criacao,

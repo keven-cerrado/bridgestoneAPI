@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Any, List
+from typing import Any, List, Optional
 from pydantic import BaseModel, ConfigDict, model_validator
 
 
@@ -139,7 +139,7 @@ class Detalles(BaseModel):
     recargo: float
     cantidad: float
     descuento: float
-    codigoBarras: str
+    codigoBarras: Optional[str] = None
     codigoArticulo: str
     importeUnitario: float
     descripcionArticulo: str
