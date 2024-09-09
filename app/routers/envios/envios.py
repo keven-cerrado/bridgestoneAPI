@@ -52,6 +52,35 @@ async def enviar_faturamento():
         raise HTTPException(status_code=500, detail=f"Erro ao enviar faturamento: {e}")
 
 
+@router.get("/enviar/faturamento/")
+async def enviar_faturamento(
+    start: str = datetime.now().strftime("%d/%m/%Y"),
+    end: str = datetime.now().strftime("%d/%m/%Y"),
+):
+    """
+    Função assíncrona responsável por enviar o faturamento.
+
+    Args:
+        start (str): Data de início do período de envio. Padrão é a data atual.
+        end (str): Data de fim do período de envio. Padrão é a data atual.
+
+    Returns:
+        enviar (objeto): Objeto contendo informações sobre o envio do faturamento.
+
+    Raises:
+        HTTPException: Exceção lançada caso ocorra um erro ao enviar o faturamento.
+    """
+    try:
+        enviar = scriptSend.tarefa_periodica_envio_faturamento(
+            filial=filiais, data_inicial=start, data_final=end
+        )
+        logger.info("Faturamento enviado")
+        return enviar
+    except Exception as e:
+        logger.error(f"Erro ao enviar faturamento: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro ao enviar faturamento: {e}")
+
+
 @router.get("/enviar/fechamento")
 async def enviar_fechamento():
     """
@@ -77,6 +106,35 @@ async def enviar_fechamento():
     """
     try:
         enviar = scriptSend.tarefa_periodica_envio_fechamento(filial=filiais)
+        logger.info("Fechamento enviado")
+        return enviar
+    except Exception as e:
+        logger.error(f"Erro ao enviar fechamento: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro ao enviar fechamento: {e}")
+
+
+@router.get("/enviar/fechamento/")
+async def enviar_fechamento(
+    start: str = datetime.now().strftime("%d/%m/%Y"),
+    end: str = datetime.now().strftime("%d/%m/%Y"),
+):
+    """
+    Função assíncrona responsável por enviar o fechamento.
+
+    Args:
+        start (str): Data de início do período de envio. Padrão é a data atual.
+        end (str): Data de fim do período de envio. Padrão é a data atual.
+
+    Returns:
+        enviar (objeto): Objeto contendo informações sobre o envio do fechamento.
+
+    Raises:
+        HTTPException: Exceção lançada caso ocorra um erro ao enviar o fechamento.
+    """
+    try:
+        enviar = scriptSend.tarefa_periodica_envio_fechamento(
+            filial=filiais, data_inicial=start, data_final=end
+        )
         logger.info("Fechamento enviado")
         return enviar
     except Exception as e:

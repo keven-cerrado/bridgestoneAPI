@@ -25,7 +25,9 @@ from app.routers.faturamento.utils import (
 bot = Bot(token=os.getenv("BOT_TOKEN_TELEGRAM"))
 
 
-def tarefa_periodica_envio_faturamento(filial: str = None):
+def tarefa_periodica_envio_faturamento(
+    filial: str = None, data_inicial: str = None, data_final: str = None
+):
     """
     Esta função é responsável por enviar periodicamente as informações de faturamento para uma API externa de uma determinada filial.
 
@@ -44,7 +46,9 @@ def tarefa_periodica_envio_faturamento(filial: str = None):
         envios = []
         # Para cada filial, envia as informações de faturamento separadamente
         for filial in filiais:
-            envio = enviar_faturamento_para_api_externa(db, filial=filial)
+            envio = enviar_faturamento_para_api_externa(
+                db, filial=filial, data_inicial=data_inicial, data_final=data_final
+            )
             envios.append(envio)
             print(f"Enviando faturamento da filial {filial}")
         return envios
@@ -55,7 +59,9 @@ def tarefa_periodica_envio_faturamento(filial: str = None):
         db.close()
 
 
-def tarefa_periodica_envio_fechamento(filial: str = None):
+def tarefa_periodica_envio_fechamento(
+    filial: str = None, data_inicial: str = None, data_final: str = None
+):
     """
     Envia o fechamento diário para a filial especificada.
 
@@ -73,7 +79,9 @@ def tarefa_periodica_envio_fechamento(filial: str = None):
         envios = []
         # Para cada filial, envia o fechamento diário
         for filial in filiais:
-            envio = enviar_fechamento_diario(db, filial=filial)
+            envio = enviar_fechamento_diario(
+                db, filial=filial, data_inicial=data_inicial, data_final=data_final
+            )
             envios.append(envio)
             print(f"Enviando fechamento da filial {filial}")
         return envios
