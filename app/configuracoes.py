@@ -10,7 +10,7 @@ senha = os.getenv("API_SENHA")
 agrupar_outros_flag = True
 
 # tempo para manter arquivo de log e data
-tempo_manter_arquivo = 60 # dias
+tempo_manter_arquivo = 60  # dias
 
 # url_base = "https://test-parceiro.scanntech.com/api-minoristas/api"
 url_base = "http://parceiro.scanntech.com/api-minoristas/api"
@@ -36,6 +36,8 @@ def converte_base64(usuario, senha):
     Returns:
         str: A string codificada em base64 no formato "Basic {encoded_credentials}".
     """
+    print(usuario)
+    print(senha)
     credentials = f"{usuario}:{senha}".encode("ascii")
     encoded_credentials = base64.b64encode(credentials).decode("ascii")
     return f"Basic {encoded_credentials}"
@@ -47,6 +49,7 @@ headers = {
     "backend-version": "1.0.0",
     "pdv-version": "1.0.0",
 }
+
 
 def limpar_arquivos_antigos(diretorio, dias):
     """
