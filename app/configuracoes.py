@@ -2,12 +2,13 @@ import base64
 import os
 import time
 from dotenv import load_dotenv
+from decouple import config
 
-load_dotenv()
+# load_dotenv()
 
 
-usuario = os.getenv("API_USUARIO")
-senha = os.getenv("API_SENHA")
+usuario = config("API_USUARIO")
+senha = config("API_SENHA")
 
 # Flag que indica se os itens que não são Bridgestone devem ser agrupados e o valor deve ser enviado como "Outros"
 agrupar_outros_flag = True
