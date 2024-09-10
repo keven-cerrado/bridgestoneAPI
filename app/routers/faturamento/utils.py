@@ -188,16 +188,17 @@ def enviar_fechamento_diario(
 
     url_api_externa = f"{url_base}/v2/minoristas/{idEmpresa}/locales/{filial}/cajas/{idCaja}/cierresDiarios"
     try:
-        resposta = requests.post(url_api_externa, data=fechamento, headers=headers)
+        fechamento_json = json.dumps(json.loads(fechamento.model_dump_json()))
+        resposta = requests.post(url_api_externa, data=fechamento_json, headers=headers)
         resposta.raise_for_status()
         logger.info(
             "Fechamento enviado com sucesso. Status code: %s", resposta.status_code
         )
         logger.info(resposta.text)
-        logger.info(fechamento)
+        logger.info(fechamento_json)
         print("Fechamento enviado com sucesso. Status code:", resposta.status_code)
         print(resposta.text)
-        print(fechamento)
+        print(fechamento_json)
     except requests.exceptions.HTTPError as err:
         logger.error(
             "Falha ao enviar fechamento. Status code: %s", err.response.status_code
@@ -205,9 +206,9 @@ def enviar_fechamento_diario(
         logger.error("Detalhes do erro: %s", err.response.text)
     except requests.exceptions.RequestException as err:
         logger.error(f"Erro de conexão ao enviar fechamento: {err}")
-        logger.error(fechamento)
+        logger.error(fechamento_json)
         print("Erro de conexão ao enviar fechamento:", err)
-        print(fechamento)
+        print(fechamento_json)
 
     return fechamento
 
