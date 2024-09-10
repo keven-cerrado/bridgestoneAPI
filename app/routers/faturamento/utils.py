@@ -100,6 +100,7 @@ def enviar_faturamento_para_api_externa(
         resposta = requests.post(
             url_api_externa, data=faturamentos_json, headers=headers
         )
+        print(headers)
         resposta.raise_for_status()
         # preenche o idLote no envio
         envio.id_lote = resposta.json()["idLote"]
