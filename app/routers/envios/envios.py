@@ -138,8 +138,10 @@ async def enviar_fechamento(
         logger.info("Fechamento enviado")
         return enviar
     except Exception as e:
-        logger.error(f"Erro ao enviar fechamento: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro ao enviar fechamento: {e}")
+        logger.error(f"Erro ao enviar fechamento: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Erro ao enviar fechamento: {str(e)}"
+        )
 
 
 @router.get("/verificar/reenvio")

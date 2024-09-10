@@ -100,7 +100,6 @@ def enviar_faturamento_para_api_externa(
         resposta = requests.post(
             url_api_externa, data=faturamentos_json, headers=headers
         )
-        print(headers)
         resposta.raise_for_status()
         # preenche o idLote no envio
         envio.id_lote = resposta.json()["idLote"]
@@ -179,10 +178,10 @@ def enviar_fechamento_diario(
     """
     current_date = datetime.now().strftime("%d/%m/%Y")
 
-    fechamento: Fechamento = get_fechamento_per_date(
-        db,
-        (data_inicial if data_inicial else current_date),
-        (data_final if data_final else current_date),
+    fechamento = get_fechamento_per_date(
+        db=db,
+        data_inicial=(data_inicial if data_inicial else current_date),
+        data_final=(data_final if data_final else current_date),
         agrupar_outros=agrupar_outros_flag,
         filial=filial,
     )
@@ -201,13 +200,9 @@ def enviar_fechamento_diario(
         print(fechamento)
     except requests.exceptions.HTTPError as err:
         logger.error(
-            "Falha ao enviar fechamento. Status code:", err.response.status_code
+            "Falha ao enviar fechamento. Status code: %s", err.response.status_code
         )
         logger.error("Detalhes do erro: %s", err.response.text)
-        logger.error(fechamento)
-        print("Falha ao enviar fechamento. Status code:", err.response.status_code)
-        print("Detalhes do erro:", err.response.text)
-        print(fechamento)
     except requests.exceptions.RequestException as err:
         logger.error(f"Erro de conexão ao enviar fechamento: {err}")
         logger.error(fechamento)

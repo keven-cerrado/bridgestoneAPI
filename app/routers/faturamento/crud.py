@@ -138,8 +138,8 @@ def get_faturamento_per_date(
 
 def get_fechamento_per_date(
     db: Session,
-    data_inicial: str,
-    data_final: str,
+    data_inicial: str = None,
+    data_final: str = None,
     agrupar_outros: bool = True,
     filial: str = None,
 ):

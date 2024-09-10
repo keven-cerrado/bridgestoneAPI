@@ -40,8 +40,6 @@ def converte_base64(usuario, senha):
     Returns:
         str: A string codificada em base64 no formato "Basic {encoded_credentials}".
     """
-    print(usuario)
-    print(senha)
     credentials = f"{usuario}:{senha}".encode("ascii")
     encoded_credentials = base64.b64encode(credentials).decode("ascii")
     return f"Basic {encoded_credentials}"
