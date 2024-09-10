@@ -1,6 +1,9 @@
 import base64
 import os
 import time
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 usuario = os.getenv("API_USUARIO")
