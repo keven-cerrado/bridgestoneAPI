@@ -215,6 +215,7 @@ def enviar_fechamento_diario(
 
 def get_solicitacoes_reenvio(
     filial: str = None,
+    tipo: str = None,
 ):
     """
     Obtém solicitações de reenvio de uma API externa.
@@ -258,7 +259,7 @@ def get_solicitacoes_reenvio(
 
     try:
         url_api_externa = (
-            f"{url_base}/v2/minoristas/{idEmpresa}/locales/{filial}/solicitudes"
+            f"{url_base}/v2/minoristas/{idEmpresa}/locales/{filial}/solicitudes/{tipo}"
         )
         resposta = requests.get(url_api_externa, headers=headers)
         resposta.raise_for_status()

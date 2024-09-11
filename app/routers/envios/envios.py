@@ -44,7 +44,7 @@ async def enviar_faturamento():
 
     """
     try:
-        enviar = scriptSend.tarefa_periodica_envio_faturamento(filial=filiais)
+        enviar = scriptSend.tarefa_periodica_envio_faturamento(centro=filiais)
         logger.info("Faturamento enviado")
         return enviar
     except Exception as e:
@@ -56,6 +56,7 @@ async def enviar_faturamento():
 async def enviar_faturamento(
     start: str = datetime.now().strftime("%d/%m/%Y"),
     end: str = datetime.now().strftime("%d/%m/%Y"),
+    centro: str = None,
 ):
     """
     Função assíncrona responsável por enviar o faturamento.
@@ -63,6 +64,7 @@ async def enviar_faturamento(
     Args:
         start (str): Data de início do período de envio. Padrão é a data atual.
         end (str): Data de fim do período de envio. Padrão é a data atual.
+        centro (str): Centro/filial específico. Padrão: None.
 
     Returns:
         enviar (objeto): Objeto contendo informações sobre o envio do faturamento.
@@ -72,7 +74,7 @@ async def enviar_faturamento(
     """
     try:
         enviar = scriptSend.tarefa_periodica_envio_faturamento(
-            filial=filiais, data_inicial=start, data_final=end
+            centro=centro, data_inicial=start, data_final=end
         )
         logger.info("Faturamento enviado")
         return enviar
@@ -105,7 +107,7 @@ async def enviar_fechamento():
 
     """
     try:
-        enviar = scriptSend.tarefa_periodica_envio_fechamento(filial=filiais)
+        enviar = scriptSend.tarefa_periodica_envio_fechamento(centro=filiais)
         logger.info("Fechamento enviado")
         return enviar
     except Exception as e:
@@ -117,6 +119,7 @@ async def enviar_fechamento():
 async def enviar_fechamento(
     start: str = datetime.now().strftime("%d/%m/%Y"),
     end: str = datetime.now().strftime("%d/%m/%Y"),
+    centro: str = None,
 ):
     """
     Função assíncrona responsável por enviar o fechamento.
@@ -133,7 +136,7 @@ async def enviar_fechamento(
     """
     try:
         enviar = scriptSend.tarefa_periodica_envio_fechamento(
-            filial=filiais, data_inicial=start, data_final=end
+            centro=centro, data_inicial=start, data_final=end
         )
         logger.info("Fechamento enviado")
         return enviar
@@ -145,7 +148,9 @@ async def enviar_fechamento(
 
 
 @router.get("/verificar/reenvio")
-async def verificar_reenvio():
+async def verificar_reenvio(
+    centro: str = None,
+):
     """
     Verifica se há necessidade de reenvio de envios.
 
@@ -158,7 +163,7 @@ async def verificar_reenvio():
         O resultado da verificação.
     """
     try:
-        verificar = scriptSend.verificar_reenvio(filial=filiais)
+        verificar = await scriptSend.verificar_reenvio(centro=centro)
         logger.info("Reenvio verificado")
         return verificar
     except Exception as e:
@@ -167,7 +172,9 @@ async def verificar_reenvio():
 
 
 @router.get("/verificar/cancelamentos")
-async def verificar_cancelamentos():
+async def verificar_cancelamentos(
+    centro: str = None,
+):
     """
     Verifica cancelamentos.
 
@@ -180,9 +187,7 @@ async def verificar_cancelamentos():
         O resultado da verificação dos cancelamentos.
     """
     try:
-        verificar = scriptSend.tarefa_periodica_verificacao_cancelamentos(
-            filial=filiais
-        )
+        verificar = scriptSend.tarefa_periodica_verificacao_cancelamentos(centro=centro)
         logger.info("Cancelamentos verificados")
         return verificar
     except Exception as e:
@@ -193,7 +198,9 @@ async def verificar_cancelamentos():
 
 
 @router.get("/verificar/devolucoes")
-async def verificar_devolucoes():
+async def verificar_devolucoes(
+    centro: str = None,
+):
     """
     Verifica as devoluções.
 
@@ -207,7 +214,7 @@ async def verificar_devolucoes():
         HTTPException: Caso ocorra algum erro durante a verificação das devoluções.
     """
     try:
-        verificar = scriptSend.tarefa_periodica_verificacao_devolucoes(filial=filiais)
+        verificar = scriptSend.tarefa_periodica_verificacao_devolucoes(centro=centro)
         logger.info("Devoluções verificadas")
         return verificar
     except Exception as e:

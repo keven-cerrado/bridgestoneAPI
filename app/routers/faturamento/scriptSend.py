@@ -26,7 +26,7 @@ bot = Bot(token=os.getenv("BOT_TOKEN_TELEGRAM"))
 
 
 def tarefa_periodica_envio_faturamento(
-    filial: str = None, data_inicial: str = None, data_final: str = None
+    centro: str = None, data_inicial: str = None, data_final: str = None
 ):
     """
     Esta função é responsável por enviar periodicamente as informações de faturamento para uma API externa de uma determinada filial.
@@ -45,7 +45,7 @@ def tarefa_periodica_envio_faturamento(
     try:
         envios = []
         # Para cada filial, envia as informações de faturamento separadamente
-        for filial in filiais:
+        for filial in filiais if not centro else [centro]:
             envio = enviar_faturamento_para_api_externa(
                 db, filial=filial, data_inicial=data_inicial, data_final=data_final
             )
@@ -60,7 +60,7 @@ def tarefa_periodica_envio_faturamento(
 
 
 def tarefa_periodica_envio_fechamento(
-    filial: str = None, data_inicial: str = None, data_final: str = None
+    centro: str = None, data_inicial: str = None, data_final: str = None
 ):
     """
     Envia o fechamento diário para a filial especificada.
@@ -78,7 +78,7 @@ def tarefa_periodica_envio_fechamento(
     try:
         envios = []
         # Para cada filial, envia o fechamento diário
-        for filial in filiais:
+        for filial in filiais if not centro else [centro]:
             envio = enviar_fechamento_diario(
                 db, filial=filial, data_inicial=data_inicial, data_final=data_final
             )
@@ -90,7 +90,7 @@ def tarefa_periodica_envio_fechamento(
         return []
 
 
-def tarefa_periodica_verificacao_cancelamentos(filial: str = None):
+def tarefa_periodica_verificacao_cancelamentos(centro: str = None):
     """
     Função responsável por realizar a verificação periódica de cancelamentos e enviar os dados para processamento.
 
@@ -112,7 +112,7 @@ def tarefa_periodica_verificacao_cancelamentos(filial: str = None):
     db = SessionLocal()
     try:
         cancelamentos = []
-        for filial in filiais:
+        for filial in filiais if not centro else [centro]:
             cancelamento = verificar_cancelamentos_enviar(db, filial=filial)
             cancelamentos.append(cancelamento)
         return cancelamentos
@@ -123,7 +123,7 @@ def tarefa_periodica_verificacao_cancelamentos(filial: str = None):
         db.close()
 
 
-def tarefa_periodica_verificacao_devolucoes(filial: str = None):
+def tarefa_periodica_verificacao_devolucoes(centro: str = None):
     """
     Função responsável por realizar a verificação periódica de devoluções em uma determinada filial.
 
@@ -144,7 +144,7 @@ def tarefa_periodica_verificacao_devolucoes(filial: str = None):
     db = SessionLocal()
     try:
         devolucoes = []
-        for filial in filiais:
+        for filial in filiais if not centro else [centro]:
             devolucao = verificar_devolucoes(db, filial=filial)
             devolucoes.append(devolucao)
         return devolucoes
@@ -173,7 +173,7 @@ async def send_message(message):
     await bot.send_message(chat_id=-4209916479, text=message)
 
 
-async def verificar_reenvio(filial: str = None):
+async def verificar_reenvio(centro: str = None):
     """
     Verifica se há solicitações de reenvio pendentes para uma determinada filial.
 
@@ -193,23 +193,29 @@ async def verificar_reenvio(filial: str = None):
 
     """
     resultado = []
+    tipos = ["movimientos", "cierresDiarios"]
     try:
-        for filial in filiais:
-            solicitacoes = get_solicitacoes_reenvio(filial=filial)
-            if solicitacoes:
-                qtd_solicitacoes = len(solicitacoes)
-                await send_message(
-                    f"Existem {qtd_solicitacoes} solicitações de reenvio pendentes. Centro: {filial}"
-                    + "\n\n".join([f"{solicitacao}" for solicitacao in solicitacoes])
-                )
-                resultado.extend(solicitacoes)
+        for filial in filiais if not centro else [centro]:
+            for tipo in tipos:
+                solicitacoes = get_solicitacoes_reenvio(filial=filial, tipo=tipo)
+                if solicitacoes:
+                    qtd_solicitacoes = len(solicitacoes)
+                    await send_message(
+                        f"Existem {qtd_solicitacoes} solicitações de reenvio pendentes. filial: {filial}"
+                        + "\n\n".join(
+                            [f"{solicitacao}" for solicitacao in solicitacoes]
+                        )
+                    )
+                    resultado.extend(solicitacoes)
         return resultado
     except Exception as e:
         print(f"Erro ao verificar reenvio: {e}")
         return resultado
 
 
-def start_verificacao_reenvio():
+def start_verificacao_reenvio(
+    centro: str = None,
+):
     """
     Função responsável por iniciar a verificação de reenvio.
 
@@ -221,7 +227,7 @@ def start_verificacao_reenvio():
     """
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    reenvios = loop.run_until_complete(verificar_reenvio())
+    reenvios = loop.run_until_complete(verificar_reenvio(centro=centro))
     return reenvios
 
 
