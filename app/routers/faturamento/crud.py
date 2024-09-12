@@ -101,6 +101,7 @@ def get_faturamento_per_date(
     data_final = datetime.strptime(data_final, "%d/%m/%Y").date()
 
     try:
+        print(filial)
         faturamentos = (
             db.query(models.ItemFaturamento)
             .filter(

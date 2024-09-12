@@ -44,7 +44,7 @@ async def enviar_faturamento():
 
     """
     try:
-        enviar = scriptSend.tarefa_periodica_envio_faturamento(centro=filiais)
+        enviar = scriptSend.tarefa_periodica_envio_faturamento()
         logger.info("Faturamento enviado")
         return enviar
     except Exception as e:
@@ -107,7 +107,7 @@ async def enviar_fechamento():
 
     """
     try:
-        enviar = scriptSend.tarefa_periodica_envio_fechamento(centro=filiais)
+        enviar = scriptSend.tarefa_periodica_envio_fechamento()
         logger.info("Fechamento enviado")
         return enviar
     except Exception as e:
