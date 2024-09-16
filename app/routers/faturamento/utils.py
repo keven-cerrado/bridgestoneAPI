@@ -187,6 +187,10 @@ def enviar_fechamento_diario(
     )
 
     url_api_externa = f"{url_base}/v2/minoristas/{idEmpresa}/locales/{filial}/cajas/{idCaja}/cierresDiarios"
+    if fechamento.cantidadMovimientos == 0:
+        logger.info("Não há movimentos para enviar.")
+        print("Não há movimentos para enviar.")
+        return fechamento
     try:
         fechamento_json = json.dumps(json.loads(fechamento.model_dump_json()))
         resposta = requests.post(url_api_externa, data=fechamento_json, headers=headers)
@@ -423,6 +427,10 @@ def verificar_cancelamentos_enviar(
 
     # enviar fechamento de cancelamentos para a API externa
     url_api_externa = f"{url_base}/v2/minoristas/{idEmpresa}/locales/{filial}/cajas/999/cierresDiarios"
+    if devolucao.cantidadMovimientos == 0:
+        logger.info("Não há cancelamentos para enviar.")
+        print("Não há cancelamentos para enviar.")
+        return devolucao
     try:
         devolucao_json = json.loads(devolucao.model_dump_json())
         devolucao_json = json.dumps(devolucao_json)
