@@ -83,7 +83,10 @@ def tarefa_periodica_envio_fechamento(
                 db, filial=filial, data_inicial=data_inicial, data_final=data_final
             )
             envios.append(envio)
-            print(f"Enviando fechamento da filial {filial}")
+            if envio.cantidadMovimientos == 0:
+                print(f"Não há movimentos para enviar na filial {filial}")
+            else:
+                print(f"Enviando fechamento da filial {filial}")
         return envios
     except Exception as e:
         print(f"Erro ao enviar fechamento: {e}")
