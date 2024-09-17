@@ -457,12 +457,14 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
 
             if item_agregado is not None:
                 # Ajuste do importe unitário para arredondar duas casas e adicionar o desconto
-                item_agregado.importeUnitario = (
-                    round(item_agregado.importe, 2) + item_agregado.descuento
+                item_agregado.importeUnitario = round(
+                    item_agregado.importe + item_agregado.descuento, 2
                 )
                 item_agregado.descuento = round(item_agregado.descuento, 2)
                 item_agregado.importe = round(item_agregado.importe, 2)
                 itens_modificados.append(item_agregado)
+                # No caso de itens "Outros", o valor total vai ser a soma dos importes
+                total_faturamento = sum(map(lambda x: x.importe, itens_modificados))
 
             # Mapeamento de condições de pagamento para códigos de pagamento da ScannTech
             condicoes_pagamento = {
