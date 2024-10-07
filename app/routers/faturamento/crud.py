@@ -398,26 +398,29 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
                         descripcionArticulo=item.DESC_MATERIAL,
                         cantidad=item.QUANTIDADE,
                         # Cálculo do importe unitário, incluindo o ICMS ST e o adicional de 1.3% para pneus importados
-                        importeUnitario=item.VLR_UNITARIO
-                        + (
-                            (
-                                (item.ICMS_ST / item.QUANTIDADE)
-                                if (item.QUANTIDADE and item.ICMS_ST)
-                                else 0
-                            )
+                        importeUnitario=round(
+                            item.VLR_UNITARIO
                             + (
                                 (
-                                    (
-                                        (item.ICMS_ST / item.QUANTIDADE)
-                                        if (item.QUANTIDADE and item.ICMS_ST)
-                                        else 0
-                                    )
-                                    * 1.3
-                                    / 100
+                                    (item.ICMS_ST / item.QUANTIDADE)
+                                    if (item.QUANTIDADE and item.ICMS_ST)
+                                    else 0
                                 )
-                                if item.GRUPO_MERC == "4153"
-                                else 0
-                            )
+                                + (
+                                    (
+                                        (
+                                            (item.ICMS_ST / item.QUANTIDADE)
+                                            if (item.QUANTIDADE and item.ICMS_ST)
+                                            else 0
+                                        )
+                                        * 1.3
+                                        / 100
+                                    )
+                                    if item.GRUPO_MERC == "4153"
+                                    else 0
+                                )
+                            ),
+                            2,
                         ),
                         # Cálculo do importe total, incluindo o ICMS ST e o adicional de 1.3% para pneus importados
                         importe=(
