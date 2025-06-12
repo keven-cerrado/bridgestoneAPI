@@ -486,6 +486,7 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
                 "U": 9,
                 "C": 11,
                 "O": 9,
+                "S": 9,
             }
 
             # Criação do objeto de resposta
