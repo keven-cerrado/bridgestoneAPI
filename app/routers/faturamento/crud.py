@@ -363,9 +363,6 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
         # verificar se um dos itens é do grupo permitido
         if any(item.GRUPO in grupos_permitidos for item in items):
             items: List[schemas.ItemFaturamentoInDB]
-            total_faturamento = 0
-            for item in items:
-                total_faturamento += item.TOTAL_BRUTO
             cliente = (
                 db.query(clientes_models.Cliente)
                 .filter(clientes_models.Cliente.ID == items[0].CLIENTE_ID)
@@ -466,8 +463,9 @@ def aggregate_by_numero_nota(db: Session, faturamentos, agrupar_outros: bool = T
                 item_agregado.descuento = round(item_agregado.descuento, 2)
                 item_agregado.importe = round(item_agregado.importe, 2)
                 itens_modificados.append(item_agregado)
-                # No caso de itens "Outros", o valor total vai ser a soma dos importes
-                total_faturamento = sum(map(lambda x: x.importe, itens_modificados))
+
+            # O valor total deve sempre ser a soma dos importes dos detalhes
+            total_faturamento = sum(map(lambda x: x.importe, itens_modificados))
 
             # Mapeamento de condições de pagamento para códigos de pagamento da ScannTech
             condicoes_pagamento = {
