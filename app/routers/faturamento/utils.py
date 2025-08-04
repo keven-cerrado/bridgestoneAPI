@@ -267,9 +267,34 @@ def get_solicitacoes_reenvio(
         )
         resposta = requests.get(url_api_externa, headers=headers)
         resposta.raise_for_status()
-        lista_solicitacoes = [
-            Solicitacoes.model_validate(s) for s in json.loads(resposta.text)
-        ]
+
+        dados_brutos = json.loads(resposta.text)
+        logger.info(f"Dados brutos recebidos da API: {dados_brutos}")
+
+        lista_solicitacoes = []
+        for i, item in enumerate(dados_brutos):
+            try:
+                solicitacao = Solicitacoes.model_validate(item)
+                lista_solicitacoes.append(solicitacao)
+            except Exception as validation_error:
+                logger.error(f"Erro de validação no item {i}: {item}")
+                logger.error(f"Erro de validação: {validation_error}")
+                # Tenta criar com valores padrão se necessário
+                try:
+                    item_corrigido = item.copy()
+                    if (
+                        "codigoCaja" not in item_corrigido
+                        or item_corrigido["codigoCaja"] is None
+                    ):
+                        item_corrigido["codigoCaja"] = None
+                    solicitacao = Solicitacoes.model_validate(item_corrigido)
+                    lista_solicitacoes.append(solicitacao)
+                    logger.info(f"Item {i} corrigido e adicionado com sucesso")
+                except Exception as second_error:
+                    logger.error(
+                        f"Falha na segunda tentativa para item {i}: {second_error}"
+                    )
+                    continue
 
         logger.info(
             f"Solicitações de reenvio obtidas com sucesso. {len(lista_solicitacoes)} solicitações obtidas.",

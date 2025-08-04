@@ -176,44 +176,215 @@ async def send_message(message):
     await bot.send_message(chat_id=-4209916479, text=message)
 
 
-async def verificar_reenvio(centro: str = None):
+def processar_reenvio(db, solicitacao, filial: str):
     """
-    Verifica se há solicitações de reenvio pendentes para uma determinada filial.
+    Processa uma solicitação de reenvio específica, executando o reenvio dos dados.
 
     Parâmetros:
-    - filial (str): O código da filial para a qual deseja verificar as solicitações de reenvio. Se nenhum valor for fornecido, todas as filiais serão verificadas.
+    - db (Session): Sessão do banco de dados
+    - solicitacao (Solicitacoes): Objeto da solicitação de reenvio
+    - filial (str): Código da filial
 
     Retorna:
-    - resultado (list): Uma lista contendo as solicitações de reenvio pendentes encontradas.
+    - dict: Resultado do processamento com status e mensagem
+
+    Descrição:
+    Esta função executa o reenvio dos dados baseado no tipo da solicitação:
+    - Para "movimientos" ou "MOVIMIENTOS": reenvia o faturamento da data específica
+    - Para "cierresDiarios", "CIERRES_DIARIOS" ou "cierres_diarios": reenvia o fechamento diário da data específica
+    """
+    try:
+        # Converte a data da solicitação para o formato esperado (dd/mm/yyyy)
+        data_reenvio = solicitacao.fecha.strftime("%d/%m/%Y")
+
+        # Normaliza o tipo da solicitação para comparação (converte para minúsculo)
+        tipo_normalizado = solicitacao.tipo.lower()
+        
+        if tipo_normalizado in ["movimientos", "movimientos"]:
+            # Reenvia faturamento para a data específica
+            resultado = enviar_faturamento_para_api_externa(
+                db, data_inicial=data_reenvio, data_final=data_reenvio, filial=filial
+            )
+            return {
+                "status": "sucesso",
+                "tipo": "faturamento",
+                "data": data_reenvio,
+                "filial": filial,
+                "resultado": resultado,
+            }
+        elif tipo_normalizado in ["cierresdiarios", "cierres_diarios", "cierresdiarios"]:
+            # Reenvia fechamento diário para a data específica
+            resultado = enviar_fechamento_diario(
+                db, data_inicial=data_reenvio, data_final=data_reenvio, filial=filial
+            )
+            return {
+                "status": "sucesso",
+                "tipo": "fechamento",
+                "data": data_reenvio,
+                "filial": filial,
+                "resultado": resultado,
+            }
+        else:
+            return {
+                "status": "erro",
+                "mensagem": f"Tipo de solicitação não reconhecido: {solicitacao.tipo}. Tipos válidos: movimientos, cierresDiarios, MOVIMIENTOS, CIERRES_DIARIOS",
+                "data": data_reenvio,
+                "filial": filial,
+            }
+    except Exception as e:
+        return {
+            "status": "erro",
+            "mensagem": f"Erro ao processar reenvio: {str(e)}",
+            "data": (
+                solicitacao.fecha.strftime("%d/%m/%Y") if solicitacao.fecha else "N/A"
+            ),
+            "filial": filial,
+        }
+
+
+async def verificar_reenvio(centro: str = None):
+    """
+    Verifica se há solicitações de reenvio pendentes e executa os reenvios automaticamente.
+
+    Parâmetros:
+    - centro (str): O código da filial para a qual deseja verificar as solicitações de reenvio. Se nenhum valor for fornecido, todas as filiais serão verificadas.
+
+    Retorna:
+    - dict: Resultado detalhado da verificação incluindo estatísticas e resultados dos reenvios.
 
     Exceções:
     - Exception: Se ocorrer algum erro durante a verificação de reenvio.
 
     Descrição:
-    Esta função verifica se há solicitações de reenvio pendentes para uma determinada filial ou para todas as filiais, se nenhum valor for fornecido. Ela obtém as solicitações de reenvio usando a função get_solicitacoes_reenvio e, se houver solicitações encontradas, envia uma mensagem contendo a quantidade de solicitações e os detalhes de cada uma delas. Em seguida, retorna uma lista contendo todas as solicitações de reenvio pendentes encontradas.
-
-    Se ocorrer algum erro durante a verificação de reenvio, a função captura a exceção e a imprime, retornando uma lista vazia como resultado.
-
+    Esta função verifica se há solicitações de reenvio pendentes para uma determinada filial ou para todas as filiais, se nenhum valor for fornecido. Para cada solicitação encontrada, executa automaticamente o reenvio dos dados para a data e filial específicas. Envia mensagens no Telegram informando sobre o progresso e resultados dos reenvios.
     """
-    resultado = []
+    resultado = {
+        "resumo": {
+            "filiais_verificadas": [],
+            "total_solicitacoes_encontradas": 0,
+            "total_reenvios_executados": 0,
+            "sucessos": 0,
+            "erros": 0,
+        },
+        "detalhes_por_filial": {},
+        "reenvios_executados": [],
+        "timestamp": time.time(),
+    }
+    
     tipos = ["movimientos", "cierresDiarios"]
+    db = SessionLocal()
+
     try:
-        for filial in filiais if not centro else [centro]:
+        filiais_para_verificar = filiais if not centro else [centro]
+        resultado["resumo"]["filiais_verificadas"] = filiais_para_verificar
+        
+        for filial in filiais_para_verificar:
+            resultado["detalhes_por_filial"][filial] = {
+                "tipos_verificados": {},
+                "total_solicitacoes": 0,
+                "reenvios_executados": 0,
+                "sucessos": 0,
+                "erros": 0,
+            }
+            
             for tipo in tipos:
                 solicitacoes = get_solicitacoes_reenvio(filial=filial, tipo=tipo)
+                qtd_solicitacoes = len(solicitacoes) if solicitacoes else 0
+                
+                resultado["detalhes_por_filial"][filial]["tipos_verificados"][tipo] = {
+                    "solicitacoes_encontradas": qtd_solicitacoes,
+                    "reenvios_executados": 0,
+                    "sucessos": 0,
+                    "erros": 0,
+                }
+                
+                resultado["resumo"]["total_solicitacoes_encontradas"] += qtd_solicitacoes
+                resultado["detalhes_por_filial"][filial]["total_solicitacoes"] += qtd_solicitacoes
+                
                 if solicitacoes:
-                    qtd_solicitacoes = len(solicitacoes)
                     await send_message(
-                        f"Existem {qtd_solicitacoes} solicitações de reenvio pendentes. filial: {filial}"
-                        + "\n\n".join(
-                            [f"{solicitacao}" for solicitacao in solicitacoes]
-                        )
+                        f"🔄 Encontradas {qtd_solicitacoes} solicitações de reenvio pendentes para filial {filial} (tipo: {tipo})\n"
+                        f"Iniciando processamento automático..."
                     )
-                    resultado.extend(solicitacoes)
+
+                    # Processa cada solicitação de reenvio
+                    for solicitacao in solicitacoes:
+                        resultado_reenvio = processar_reenvio(db, solicitacao, filial)
+                        resultado["reenvios_executados"].append(resultado_reenvio)
+                        
+                        # Atualiza estatísticas
+                        resultado["resumo"]["total_reenvios_executados"] += 1
+                        resultado["detalhes_por_filial"][filial]["reenvios_executados"] += 1
+                        resultado["detalhes_por_filial"][filial]["tipos_verificados"][tipo]["reenvios_executados"] += 1
+                        
+                        if resultado_reenvio["status"] == "sucesso":
+                            resultado["resumo"]["sucessos"] += 1
+                            resultado["detalhes_por_filial"][filial]["sucessos"] += 1
+                            resultado["detalhes_por_filial"][filial]["tipos_verificados"][tipo]["sucessos"] += 1
+                            
+                            await send_message(
+                                f"✅ Reenvio executado com sucesso!\n"
+                                f"📅 Data: {resultado_reenvio['data']}\n"
+                                f"🏢 Filial: {resultado_reenvio['filial']}\n"
+                                f"📋 Tipo: {resultado_reenvio['tipo']}\n"
+                                f"🔢 Caixa: {solicitacao.codigoCaja if solicitacao.codigoCaja is not None else 'N/A'}"
+                            )
+                        else:
+                            resultado["resumo"]["erros"] += 1
+                            resultado["detalhes_por_filial"][filial]["erros"] += 1
+                            resultado["detalhes_por_filial"][filial]["tipos_verificados"][tipo]["erros"] += 1
+                            
+                            await send_message(
+                                f"❌ Erro no reenvio!\n"
+                                f"📅 Data: {resultado_reenvio['data']}\n"
+                                f"🏢 Filial: {resultado_reenvio['filial']}\n"
+                                f"📋 Tipo: {tipo}\n"
+                                f"🔢 Caixa: {solicitacao.codigoCaja if solicitacao.codigoCaja is not None else 'N/A'}\n"
+                                f"⚠️ Erro: {resultado_reenvio['mensagem']}"
+                            )
+
+                    # Envia resumo por tipo se houver solicitações
+                    if qtd_solicitacoes > 0:
+                        sucessos_tipo = resultado["detalhes_por_filial"][filial]["tipos_verificados"][tipo]["sucessos"]
+                        erros_tipo = resultado["detalhes_por_filial"][filial]["tipos_verificados"][tipo]["erros"]
+                        await send_message(
+                            f"📊 Resumo do processamento - Filial {filial} ({tipo}):\n"
+                            f"✅ Sucessos: {sucessos_tipo}\n"
+                            f"❌ Erros: {erros_tipo}"
+                        )
+
+        # Envia resumo geral se houve solicitações
+        if resultado["resumo"]["total_solicitacoes_encontradas"] > 0:
+            await send_message(
+                f"� Resumo Geral da Verificação:\n"
+                f"🏢 Filiais verificadas: {len(filiais_para_verificar)}\n"
+                f"📋 Total de solicitações encontradas: {resultado['resumo']['total_solicitacoes_encontradas']}\n"
+                f"🔄 Total de reenvios executados: {resultado['resumo']['total_reenvios_executados']}\n"
+                f"✅ Sucessos: {resultado['resumo']['sucessos']}\n"
+                f"❌ Erros: {resultado['resumo']['erros']}"
+            )
+        else:
+            await send_message(
+                f"ℹ️ Verificação concluída - Nenhuma solicitação de reenvio encontrada\n"
+                f"🏢 Filiais verificadas: {', '.join(filiais_para_verificar)}\n"
+                f"📋 Tipos verificados: movimientos, cierresDiarios"
+            )
+
         return resultado
     except Exception as e:
+        erro_msg = f"❌ Erro geral ao verificar/processar reenvios: {str(e)}"
+        await send_message(erro_msg)
         print(f"Erro ao verificar reenvio: {e}")
+        
+        # Adiciona informações do erro ao resultado
+        resultado["erro"] = {
+            "mensagem": str(e),
+            "timestamp": time.time(),
+        }
+        
         return resultado
+    finally:
+        db.close()
 
 
 def start_verificacao_reenvio(

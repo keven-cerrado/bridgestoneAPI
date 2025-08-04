@@ -161,6 +161,7 @@ class ModelScannTech(BaseModel):
     documentoCliente: None
     descripcionCanalVenta: str
 
+
 class Fechamento(BaseModel):
     fechaVentas: date
     montoVentaLiquida: float
@@ -171,7 +172,7 @@ class Fechamento(BaseModel):
 
 class Solicitacoes(BaseModel):
     fecha: date
-    codigoCaja: int
+    codigoCaja: Optional[int] = None
     tipo: str
 
 

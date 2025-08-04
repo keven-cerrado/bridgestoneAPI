@@ -152,23 +152,156 @@ async def verificar_reenvio(
     centro: str = None,
 ):
     """
-    Verifica se há necessidade de reenvio de envios.
+    Verifica se há necessidade de reenvio de envios e executa os reenvios automaticamente.
 
-    Retorna o resultado da verificação.
+    Args:
+        centro (str, optional): Código da filial específica para verificar.
+                               Se não fornecido, verifica todas as filiais.
+
+    Returns:
+        dict: Resultado detalhado da verificação incluindo:
+            - resumo: Estatísticas gerais (filiais verificadas, total de solicitações, sucessos, erros)
+            - detalhes_por_filial: Informações específicas de cada filial
+            - reenvios_executados: Lista completa de todos os reenvios executados
+            - timestamp: Momento da execução
 
     Raises:
         HTTPException: Se ocorrer um erro ao verificar o reenvio.
 
-    Returns:
-        O resultado da verificação.
+    Example Response:
+        {
+            "resumo": {
+                "filiais_verificadas": ["0101", "0102"],
+                "total_solicitacoes_encontradas": 3,
+                "total_reenvios_executados": 3,
+                "sucessos": 2,
+                "erros": 1
+            },
+            "detalhes_por_filial": {
+                "0101": {
+                    "tipos_verificados": {
+                        "movimientos": {"solicitacoes_encontradas": 2, "sucessos": 2, "erros": 0},
+                        "cierresDiarios": {"solicitacoes_encontradas": 0, "sucessos": 0, "erros": 0}
+                    },
+                    "total_solicitacoes": 2,
+                    "reenvios_executados": 2,
+                    "sucessos": 2,
+                    "erros": 0
+                }
+            },
+            "reenvios_executados": [...],
+            "timestamp": 1642678800.123
+        }
     """
     try:
-        verificar = await scriptSend.verificar_reenvio(centro=centro)
-        logger.info("Reenvio verificado")
-        return verificar
+        resultado = await scriptSend.verificar_reenvio(centro=centro)
+
+        # Log das informações principais
+        if resultado.get("resumo"):
+            resumo = resultado["resumo"]
+            logger.info(
+                f"Verificação de reenvio concluída - "
+                f"Filiais: {len(resumo.get('filiais_verificadas', []))}, "
+                f"Solicitações: {resumo.get('total_solicitacoes_encontradas', 0)}, "
+                f"Sucessos: {resumo.get('sucessos', 0)}, "
+                f"Erros: {resumo.get('erros', 0)}"
+            )
+
+        return {
+            "status": "success",
+            "message": "Verificação de reenvio concluída com sucesso",
+            "data": resultado,
+        }
     except Exception as e:
         logger.error(f"Erro ao verificar reenvio: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro ao verificar reenvio: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "status": "error",
+                "message": f"Erro ao verificar reenvio: {str(e)}",
+                "error_type": type(e).__name__,
+            },
+        )
+
+
+@router.post("/executar/reenvio")
+async def executar_reenvio(
+    data: str,
+    tipo: str,
+    centro: str,
+):
+    """
+    Executa um reenvio manual para uma data, tipo e filial específicos.
+
+    Args:
+        data (str): Data para reenvio no formato dd/mm/yyyy
+        tipo (str): Tipo de reenvio ('movimientos' ou 'cierresDiarios')
+        centro (str): Código da filial
+
+    Returns:
+        Resultado do reenvio executado
+
+    Raises:
+        HTTPException: Se ocorrer um erro ao executar o reenvio
+    """
+    try:
+        from app.database import SessionLocal
+        from app.routers.faturamento.schemas import Solicitacoes
+        from datetime import datetime
+
+        # Valida o tipo
+        tipos_validos = [
+            "movimientos",
+            "cierresDiarios",
+            "MOVIMIENTOS",
+            "CIERRES_DIARIOS",
+            "cierres_diarios",
+        ]
+        if tipo not in tipos_validos:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Tipo deve ser um dos seguintes: {', '.join(tipos_validos)}",
+            )
+
+        # Converte a data string para objeto date
+        try:
+            data_obj = datetime.strptime(data, "%d/%m/%Y").date()
+        except ValueError:
+            raise HTTPException(
+                status_code=400, detail="Data deve estar no formato dd/mm/yyyy"
+            )
+
+        # Cria uma solicitação fictícia para usar a função processar_reenvio
+        solicitacao_ficticia = Solicitacoes(
+            fecha=data_obj, codigoCaja=1, tipo=tipo  # Valor padrão
+        )
+
+        db = SessionLocal()
+        try:
+            resultado = scriptSend.processar_reenvio(db, solicitacao_ficticia, centro)
+
+            if resultado["status"] == "sucesso":
+                logger.info(f"Reenvio manual executado com sucesso: {resultado}")
+                return {
+                    "message": "Reenvio executado com sucesso",
+                    "resultado": resultado,
+                }
+            else:
+                logger.error(f"Erro no reenvio manual: {resultado}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Erro ao executar reenvio: {resultado['mensagem']}",
+                )
+        finally:
+            db.close()
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao executar reenvio manual: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Erro ao executar reenvio: {str(e)}"
+        )
 
 
 @router.get("/verificar/cancelamentos")
