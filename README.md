@@ -407,7 +407,6 @@ Este projeto possui documentação abrangente dividida em arquivos específicos:
 - **[CRUD_DOCUMENTATION.md](CRUD_DOCUMENTATION.md)** - **Documentação detalhada do módulo CRUD** ⭐
 - **[EXAMPLES.md](EXAMPLES.md)** - Exemplos práticos de uso da API
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Guia de solução de problemas
-- **[CHANGELOG.md](CHANGELOG.md)** - Histórico de mudanças e versionamento
 
 ### 🎯 Documentação por Área
 
@@ -434,6 +433,13 @@ O arquivo **[CRUD_DOCUMENTATION.md](CRUD_DOCUMENTATION.md)** é **fundamental** 
 - 📊 **Regras de negócio** (produtos Bridgestone vs "Outros")
 - 🔄 **Transformação de dados** (formato interno → ScannTech)
 - 💰 **Mapeamentos** (formas de pagamento, códigos de produto)
+
+
+### 🌐 Documentação Externa
+
+#### API ScannTech
+- **[Documentação Oficial da API ScannTech](https://scanntech.cloud.xwiki.com/xwiki/wiki/di/view/apis/)** - Especificações completas dos endpoints, schemas e exemplos da API externa
+
 
 **Este documento é essencial para qualquer desenvolvedor que precise modificar a lógica de cálculos ou filtros!**
 
